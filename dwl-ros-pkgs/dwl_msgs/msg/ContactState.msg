@@ -2,7 +2,7 @@
 string name
 
 # Current foot position and estimated foot wrench from a measured torque joints
-geometry_msgs/Point position
-geometry_msgs/Point velocity
-geometry_msgs/Point acceleration
+geometry_msgs/Vector3 position
+geometry_msgs/Vector3 velocity
+geometry_msgs/Vector3 acceleration
 geometry_msgs/Wrench wrench
