@@ -1,15 +1,22 @@
-# This represents a locomotion trajectory with reference coordinate frame and timestamp
+# This message describes the whole-body state of controller.
+#
+# A whole-body controller state is defined the desired, actual, and
+# error of the whole-body state of the system. The description of
+# every element is defined in their respectives messages.
+#
+# The header specifies the time at which the trajectory is published.
+
+
 Header header
 
-# The current whole-body state
+# Desired whole-body state
 dwl_msgs/WholeBodyState desired
 
-# The current whole-body state
+# Actual whole-body state
 dwl_msgs/WholeBodyState actual
 
-# The current whole-body state
+# Error whole-body state
 dwl_msgs/WholeBodyState error
 
-# Controller states. The command represent the total command send it to the actuator given a feedfoward command
-# (operational-space controller) and feedback command (pid controller)
+# Command state
 dwl_msgs/JointCommand[] command
