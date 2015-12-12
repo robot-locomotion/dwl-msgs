@@ -8,7 +8,11 @@
 # of the whole-body state. The goal is to make each of the fields
 # optional. For instance, if you floating-base system has a reduced
 # number of floating-base joints, i.e. less than 6 dof.
+#
+# The header specifies the time at which the trajectory is published.
 
+
+Header header
 
 # This represent the time state
 float64 time
