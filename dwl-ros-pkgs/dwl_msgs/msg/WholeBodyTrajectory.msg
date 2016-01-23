@@ -1,6 +1,6 @@
 # This message describes a whole-body trajectory.
 #
-# A whole-body trajectory is defined the actual state of the system,
+# A whole-body trajectory is defined by the actual state of the system,
 # and a sequence of states.
 # The description of every element is defined in their respective
 # messages. This state is described in respective time.

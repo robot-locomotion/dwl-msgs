@@ -1,6 +1,6 @@
 # This message describes the whole-body state of controller.
 #
-# A whole-body controller state is defined the desired, actual, and
+# A whole-body controller state is defined by the desired, actual, and
 # error of the whole-body state of the system. The description of
 # every element is defined in their respective messages.
 #
