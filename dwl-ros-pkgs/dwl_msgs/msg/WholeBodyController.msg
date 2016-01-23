@@ -2,7 +2,7 @@
 #
 # A whole-body controller state is defined the desired, actual, and
 # error of the whole-body state of the system. The description of
-# every element is defined in their respectives messages.
+# every element is defined in their respective messages.
 #
 # The header specifies the time at which the trajectory is published.
 

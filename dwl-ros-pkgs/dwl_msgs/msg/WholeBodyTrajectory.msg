@@ -2,7 +2,7 @@
 #
 # A whole-body trajectory is defined the actual state of the system,
 # and a sequence of states.
-# The description of every element is defined in their respectives
+# The description of every element is defined in their respective
 # messages. This state is described in respective time.
 #
 # The header specifies the time at which the trajectory is published.

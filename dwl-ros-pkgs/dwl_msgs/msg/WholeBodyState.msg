@@ -1,7 +1,7 @@
 # This message describes the whole-body state of rigid body system.
 #
 # A whole-body state is defined the base, joints and contact states.
-# The description of every element is defined in their respectives
+# The description of every element is defined in their respective
 # messages. This state is described in respective time.
 #
 # This message consists of a multiple arrays, one for each part of
