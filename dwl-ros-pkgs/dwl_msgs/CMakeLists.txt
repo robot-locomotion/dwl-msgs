@@ -22,8 +22,8 @@ add_message_files(
     JointState.msg
     JointCommand.msg
     ContactState.msg
-    StabilityState.msg
-    StabilityTrajectory.msg
+    ReducedState.msg
+    ReducedTrajectory.msg
     WholeBodyState.msg
     WholeBodyTrajectory.msg
     WholeBodyController.msg)
