@@ -5,7 +5,7 @@
 # center of pressure (CoP), or zero moment point (ZMP), position
 # and the support polygon for each phase.
 # The description of every element is defined in their respective
-# messages. This state is described in respective time.
+# messages.
 #
 # This message consists of a multiple arrays, one for each part of
 # of the reduced-body state.
@@ -14,6 +14,9 @@
 
 
 Header header
+
+# The actual reduced trajectory
+dwl_msgs/ReducedState actual
 
 # The reduced trajectory
 dwl_msgs/ReducedState[] trajectory
