@@ -10,7 +10,7 @@ from std_msgs.msg import Bool
 class WholeBodyTrajectoryRecorder():
     def __init__(self):
         # Defining the subscriber
-        rospy.Subscriber("/hyl/plan", WholeBodyTrajectory, self.callback)
+        rospy.Subscriber("/hyq/plan", WholeBodyTrajectory, self.callback)
 
 
     def callback(self, msg):
@@ -28,9 +28,9 @@ class WholeBodyTrajectoryRecorder():
             activate = Bool()
             activate.data = True
             bag.write('playing', activate)
-        
+
             time.sleep(duration)
-            bag.write('/hyl/plan', msg)
+            bag.write('/hyq/plan', msg)
         finally:
             bag.close()
 
