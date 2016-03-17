@@ -41,7 +41,8 @@ class WholeBodyTrajectoryPublisher():
                                    state.base[BaseState.LZ].position),
                                   tf.transformations.quaternion_from_euler(state.base[BaseState.AX].position,
                                                                            state.base[BaseState.AY].position,
-                                                                           state.base[BaseState.AZ].position),
+                                                                           state.base[BaseState.AZ].position,
+                                                                           'rzyz'),
                                   rospy.Time.now(),
                                   "base_link",
                                   "odom")        
