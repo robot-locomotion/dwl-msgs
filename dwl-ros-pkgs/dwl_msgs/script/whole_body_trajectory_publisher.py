@@ -24,7 +24,6 @@ class WholeBodyTrajectoryPublisher():
         # Publishing the current joint state
         self.publishBaseTf(state)
         self.publishJointState(state)
-        rospy.sleep(0.5)
         
         # Publishing the joint state trajectory
         for i in range(len(msg.trajectory)):
