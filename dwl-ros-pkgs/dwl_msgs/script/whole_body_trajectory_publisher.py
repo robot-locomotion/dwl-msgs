@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 import rospy
-from dwl_msgs.msg import WholeBodyTrajectory
+import tf
+from dwl_msgs.msg import WholeBodyTrajectory, BaseState
 from sensor_msgs.msg import JointState
 
 
 class WholeBodyTrajectoryPublisher():
     def __init__(self):
         # Defining the subscriber
-        rospy.Subscriber("/hyl/plan", WholeBodyTrajectory, self.callback)
-        
-        # Defining the publisher
-        self.pub = rospy.Publisher('joint_states', JointState, queue_size=5)
+        rospy.Subscriber("/hyq/plan", WholeBodyTrajectory, self.callback)
+
+        # Defining the base state publisher (tf broadcaster)
+        self.tf_pub = tf.TransformBroadcaster()
+
+        # Defining the joint state publisher
+        self.joint_pub = rospy.Publisher('joint_states', JointState, queue_size=5)
 
 
     def callback(self, msg):
@@ -18,7 +22,8 @@ class WholeBodyTrajectoryPublisher():
         state = msg.actual
         
         # Publishing the current joint state
-        self.publishJointState(state);
+        self.publishBaseTf(state)
+        self.publishJointState(state)
         rospy.sleep(0.5)
         
         # Publishing the joint state trajectory
@@ -26,41 +31,56 @@ class WholeBodyTrajectoryPublisher():
             duration = msg.trajectory[i].time - state.time
             rospy.sleep(duration)
             state = msg.trajectory[i]
+            self.publishBaseTf(state)
             self.publishJointState(state)
+
        
+    def publishBaseTf(self, state):
+        self.tf_pub.sendTransform((state.base[BaseState.LX].position,
+                                   state.base[BaseState.LY].position,
+                                   state.base[BaseState.LZ].position),
+                                  tf.transformations.quaternion_from_euler(state.base[BaseState.AX].position,
+                                                                           state.base[BaseState.AY].position,
+                                                                           state.base[BaseState.AZ].position,
+                                                                           'rzyz'),
+                                  rospy.Time.now(),
+                                  "base_link",
+                                  "odom")        
+        
         
     def publishJointState(self, state):
-        msg = JointState()
+        # Getting the base and joint messages
+        joint_msg = JointState()
         
-        # Setting the time
-        msg.header.stamp = rospy.Time.now()
-        
-        # Setting the floating-base system DoF
+        # Setting up the time
+        joint_msg.header.stamp = rospy.Time.now()
+
+        # Setting up the floating-base system DoF
         num_base_joints = len(state.base)
         num_joints = (num_base_joints + len(state.joints))
         
         # Initializing the joint state sizes
-        msg.name = num_joints * [""]
-        msg.position = num_joints * [0.0]
-        msg.velocity = num_joints * [0.0]
-        msg.effort = num_joints * [0.0]
+        joint_msg.name = num_joints * [""]
+        joint_msg.position = num_joints * [0.0]
+        joint_msg.velocity = num_joints * [0.0]
+        joint_msg.effort = num_joints * [0.0]
         
         # Setting the whole-body state message
         for i in range(num_joints):
             if i < num_base_joints:
-                msg.name[i] = state.base[i].name
-                msg.position[i] = state.base[i].position
-                msg.velocity[i] = state.base[i].velocity
-                msg.effort[i] = 0.0
+                joint_msg.name[i] = state.base[i].name
+                joint_msg.position[i] = state.base[i].position
+                joint_msg.velocity[i] = state.base[i].velocity
+                joint_msg.effort[i] = 0.0
             else:
                 joint_idx = i - num_base_joints
-                msg.name[i] = state.joints[joint_idx].name
-                msg.position[i] = state.joints[joint_idx].position;
-                msg.velocity[i] = state.joints[joint_idx].velocity;
-                msg.effort[i] = state.joints[joint_idx].effort;
+                joint_msg.name[i] = state.joints[joint_idx].name
+                joint_msg.position[i] = state.joints[joint_idx].position;
+                joint_msg.velocity[i] = state.joints[joint_idx].velocity;
+                joint_msg.effort[i] = state.joints[joint_idx].effort;
                 
         # Publishing the current joint state       
-        self.pub.publish(msg)
+        self.joint_pub.publish(joint_msg)
         
 
 

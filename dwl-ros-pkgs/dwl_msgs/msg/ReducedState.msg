@@ -7,6 +7,9 @@
 # messages. This state is described in respective time.
 
 
+# This represent the time state
+float64 time
+
 # Center of Mass position
 geometry_msgs/Vector3 center_of_mass
 
