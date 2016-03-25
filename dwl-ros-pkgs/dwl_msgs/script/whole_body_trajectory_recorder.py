@@ -14,7 +14,7 @@ class WholeBodyTrajectoryRecorder():
         self.reduced_sub = message_filters.Subscriber('/hyq/reduced_plan', ReducedTrajectory)
         
         # Setting up the time synchronization
-        ts = message_filters.TimeSynchronizer([self.full_sub, self.reduced_sub], 10)
+        ts = message_filters.ApproximateTimeSynchronizer([self.full_sub, self.reduced_sub], 10, 0.1)
         
         # Registering just one callback function
         ts.registerCallback(self.callback)
