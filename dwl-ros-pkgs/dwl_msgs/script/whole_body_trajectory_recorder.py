@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import rosbag
+import time
 import message_filters
 from datetime import datetime
 from dwl_msgs.msg import WholeBodyTrajectory, ReducedTrajectory
@@ -32,6 +33,7 @@ class WholeBodyTrajectoryRecorder():
             activate.data = True
             bag.write('playing', activate)
 
+            time.sleep(0.2)
             bag.write('/hyq/plan', full_plan)
             bag.write('/hyq/reduced_plan', reduced_plan)
         finally:
