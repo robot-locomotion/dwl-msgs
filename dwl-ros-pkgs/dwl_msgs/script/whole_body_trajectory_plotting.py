@@ -15,8 +15,8 @@ def extract(bagfile, whole_body_state_topic):
     state_list = list()
     initial_time = 0
     with rosbag.Bag(bagfile, 'r') as bag:
-        initial_time = 4.9
-        duration = 1.
+        initial_time = 0.
+        duration = 0.
         starting_time = bag.get_start_time() + initial_time
         if (duration == 0.0):
             ending_time = bag.get_end_time()
@@ -108,9 +108,7 @@ def extract(bagfile, whole_body_state_topic):
     contact_vec = np.array(contact_list)
 
     return time_vec, base_pos_vec, base_vel_vec, base_acc_vec, joint_pos_vec, joint_vel_vec, joint_acc_vec, contact_vec
-          
-# def record_data(x, y):
-    #write date in txt file
+
     
     
 if __name__ == '__main__':
@@ -125,17 +123,17 @@ if __name__ == '__main__':
     time, base_pos, base_vel, base_acc, joint_pos, joint_vel, joint_acc, contact_pos = extract(args.bag, args.topic)
 
     # Plotting the base states
-    num_base_joints = 1#len(joint_state[0])
+    num_base_joints = len(base_pos[0]) / 2
     for i in range(num_base_joints):
         # Plotting the base position
         fig = plt.figure(i)
         ax = fig.add_subplot(111)
         ax.plot(time,base_pos[:,2*i+1], 'k', linewidth=2.5)
-        ax.plot(time,base_pos[:,2*i]+0.2283, 'r', linewidth=2.5)
+        ax.plot(time,base_pos[:,2*i], 'r', linewidth=2.5)
         plt.title('Base Position', fontsize=18, fontweight='bold')
         plt.ylabel('$z$ $[m]$', {'color':'k', 'fontsize':18})
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':18})
-#         plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -174,12 +172,12 @@ if __name__ == '__main__':
         fig.savefig('base_acc_' + str(i) + '.pdf')
         
     # Plotting the joint states
-    num_joints = 2#len(joint_state[0])
+    num_joints = len(joint_pos[0]) / 2
     for i in range(num_joints):
-        fig = plt.figure(i+(num_base_joints*(num_base_joints+2)))
+        fig = plt.figure(i+2*(num_base_joints*num_base_joints))
         ax = fig.add_subplot(111)
-        ax.plot(time,joint_pos[:,num_joints*i+1], 'k', linewidth=2.5)
-        ax.plot(time,joint_pos[:,num_joints*i], 'r', linewidth=2.5)
+        ax.plot(time,joint_pos[:,2*i+1], 'k', linewidth=2.5)
+        ax.plot(time,joint_pos[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Joint position')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
         plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
@@ -193,8 +191,8 @@ if __name__ == '__main__':
         # Plotting the joint velocity
         fig = plt.figure(num_joints*(i+1)+(num_base_joints*(num_base_joints+2)))
         ax = fig.add_subplot(111)
-        ax.plot(time,joint_vel[:,num_joints*i+1], 'k', linewidth=2.5)
-        ax.plot(time,joint_vel[:,num_joints*i], 'r', linewidth=2.5)
+        ax.plot(time,joint_vel[:,2*i+1], 'k', linewidth=2.5)
+        ax.plot(time,joint_vel[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Joint Velocity')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
         plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
@@ -208,8 +206,8 @@ if __name__ == '__main__':
         # Plotting the joint acceleration
         fig = plt.figure(num_joints*(i+2)+(num_base_joints*(num_base_joints+2)))
         ax = fig.add_subplot(111)
-        ax.plot(time,joint_acc[:,num_joints*i+1], 'k', linewidth=2.5)
-        ax.plot(time,joint_acc[:,num_joints*i], 'r', linewidth=2.5)
+        ax.plot(time,joint_acc[:,2*i+1], 'k', linewidth=2.5)
+        ax.plot(time,joint_acc[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Joint Acceleration')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
         plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
