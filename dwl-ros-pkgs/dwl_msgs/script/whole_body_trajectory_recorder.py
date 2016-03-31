@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import rosbag
+import time
 import message_filters
 from datetime import datetime
 from dwl_msgs.msg import WholeBodyTrajectory, ReducedTrajectory
@@ -14,7 +15,7 @@ class WholeBodyTrajectoryRecorder():
         self.reduced_sub = message_filters.Subscriber('/hyq/reduced_plan', ReducedTrajectory)
         
         # Setting up the time synchronization
-        ts = message_filters.TimeSynchronizer([self.full_sub, self.reduced_sub], 10)
+        ts = message_filters.ApproximateTimeSynchronizer([self.full_sub, self.reduced_sub], 10, 0.1)
         
         # Registering just one callback function
         ts.registerCallback(self.callback)
@@ -32,6 +33,7 @@ class WholeBodyTrajectoryRecorder():
             activate.data = True
             bag.write('playing', activate)
 
+            time.sleep(0.2)
             bag.write('/hyq/plan', full_plan)
             bag.write('/hyq/reduced_plan', reduced_plan)
         finally:

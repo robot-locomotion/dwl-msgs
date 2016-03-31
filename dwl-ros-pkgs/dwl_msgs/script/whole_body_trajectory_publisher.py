@@ -44,7 +44,7 @@ class WholeBodyTrajectoryPublisher():
                                                                            'rzyz'),
                                   rospy.Time.now(),
                                   "base_link",
-                                  "odom")        
+                                  "world")        
         
         
     def publishJointState(self, state):
