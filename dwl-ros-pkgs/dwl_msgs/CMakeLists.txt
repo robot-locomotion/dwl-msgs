@@ -36,13 +36,22 @@ generate_messages(
    
 
 catkin_package(
-  INCLUDE_DIRS
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS roscpp message_runtime geometry_msgs
   DEPENDS system_lib)
 
 
+include_directories(include)
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${dwl_INCLUDE_DIRS})
 
 link_directories(${catkin_LIBRARY_DIRS})
 link_directories(${dwl_LIBRARY_DIRS})
+
+## Declare a cpp library
+add_library(${PROJECT_NAME}  src/ControllerCommons.cpp
+                             src/PlannerCommons.cpp)
+target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES}
+                                       ${dwl_LIBRARIES})
+add_dependencies(${PROJECT_NAME}  ${dwl_msgs_EXPORTED_TARGETS})
