@@ -7,6 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   geometry_msgs
+  tf
+  tf_conversions
   message_generation)
 
 find_package(dwl REQUIRED)
