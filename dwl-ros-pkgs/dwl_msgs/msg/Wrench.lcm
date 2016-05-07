@@ -1,0 +1,12 @@
+// This represents force in free space, separated into
+// its linear and angular parts.
+
+
+package dwl_msg;
+
+struct Wrench_t
+{
+    int64_t  utime;
+    double force[3];
+    double torque[3];
+}

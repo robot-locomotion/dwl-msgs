@@ -1,0 +1,26 @@
+// This message describes the state of contact or end-effector body.
+//
+// The contact states are defined w.r.t the floating-base frame. A
+// contact state is defined by:
+//  * the position of the contact (m),
+//  * the velocity of the contact (m/s),
+//  * the acceleration of the contact (m/s^2), and
+//  * the wrench of the contact (N or Nm)
+//
+// Each joint is uniquely identified by its name
+// the below identifiers. Additionally, a floating-base joint could be
+
+
+package dwl_msg;
+
+struct ContactState_t
+{
+	# Name of the contact body
+	string name
+
+	# State of the contact body
+	Vector3d_t position
+	Vector3d_t velocity
+	Vector3d_t acceleration
+	Wrench_t wrench
+}
