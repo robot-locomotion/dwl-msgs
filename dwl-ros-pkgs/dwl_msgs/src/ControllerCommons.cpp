@@ -612,6 +612,9 @@ void ControllerCommons::updatePlan(dwl::WholeBodyState& state)
 	// Getting the actual desired whole-body state
 	dwl_msgs::WholeBodyState state_msgs = plan_.trajectory[trajectory_counter_];
 
+	// Updating the time information
+	state.time = state_msgs.time;
+
 	// Updating the base states
 	unsigned int num_base = state_msgs.base.size();
 	for (unsigned int base_idx = 0; base_idx < num_base; base_idx++) {
