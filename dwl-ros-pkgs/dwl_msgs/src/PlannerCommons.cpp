@@ -72,6 +72,14 @@ void PlannerCommons::publishMotionPlan(const dwl::WholeBodyState& current_state,
 		return;
 	}
 
+	// Waiting that the subscriber is connected for few msecs
+	ros::Rate poll_rate(100);
+	int counter = 0;
+	while (motion_plan_pub_.getNumSubscribers() == 0 && counter <= 20) {
+	    poll_rate.sleep();
+	    counter++;
+	}
+
 	// Publishing the motion plan if there is at least one subscriber
 	if (motion_plan_pub_.getNumSubscribers() > 0) {
 		motion_plan_msg_.header.stamp = ros::Time::now();
@@ -97,6 +105,14 @@ void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyTrajectory& trajec
 	if (!init_reduced_plan_pub_) {
 		ROS_WARN("Could not published the stability trajectory because it was not initialized");
 		return;
+	}
+
+	// Waiting that the subscriber is connected for few msecs
+	ros::Rate poll_rate(100);
+	int counter = 0;
+	while (motion_plan_pub_.getNumSubscribers() == 0 && counter <= 20) {
+	    poll_rate.sleep();
+	    counter++;
 	}
 
 	// Publishing the reduced motion plan if there is at least one subscriber
