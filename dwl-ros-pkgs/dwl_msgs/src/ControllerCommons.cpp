@@ -497,13 +497,16 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 
 		// TF message
 		geometry_msgs::TransformStamped tf_msg;
-		tf_msg.header.stamp = ros::Time::now();
+		tf_msg.header.stamp = time;
+		tf_msg.child_frame_id = "base_link";
+		tf_msg.header.frame_id = "world";
 		tf_msg.transform.translation.x = base_pos(dwl::rbd::LX);
 		tf_msg.transform.translation.y = base_pos(dwl::rbd::LY);
 		tf_msg.transform.translation.z = base_pos(dwl::rbd::LZ);
 		tf_msg.transform.rotation.x = base_quat.x();
 		tf_msg.transform.rotation.y = base_quat.y();
 		tf_msg.transform.rotation.z = base_quat.z();
+		tf_msg.transform.rotation.w = base_quat.w();
 		odom_tf_broadcaster_.sendTransform(tf_msg);
 	}
 }
