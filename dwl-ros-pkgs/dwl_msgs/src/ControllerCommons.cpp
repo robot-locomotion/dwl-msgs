@@ -6,7 +6,7 @@ namespace dwl_msgs
 
 ControllerCommons::ControllerCommons() : new_plan_(false), init_base_state_(false),
 		num_traj_points_(0), trajectory_counter_(0), controller_publish_rate_(50),
-		robot_publish_rate_(50), odom_publish_rate_(50), imu_publish_rate_(50),
+		robot_publish_rate_(250), odom_publish_rate_(250), imu_publish_rate_(250),
 		init_controller_state_pub_(false), init_robot_state_pub_(false),
 		init_odom_state_pub_(false), init_imu_state_pub_(false)
 {
@@ -497,13 +497,16 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 
 		// TF message
 		geometry_msgs::TransformStamped tf_msg;
-		tf_msg.header.stamp = ros::Time::now();
+		tf_msg.header.stamp = time;
+		tf_msg.child_frame_id = "base_link";
+		tf_msg.header.frame_id = "world";
 		tf_msg.transform.translation.x = base_pos(dwl::rbd::LX);
 		tf_msg.transform.translation.y = base_pos(dwl::rbd::LY);
 		tf_msg.transform.translation.z = base_pos(dwl::rbd::LZ);
 		tf_msg.transform.rotation.x = base_quat.x();
 		tf_msg.transform.rotation.y = base_quat.y();
 		tf_msg.transform.rotation.z = base_quat.z();
+		tf_msg.transform.rotation.w = base_quat.w();
 		odom_tf_broadcaster_.sendTransform(tf_msg);
 	}
 }
@@ -611,6 +614,9 @@ void ControllerCommons::updatePlan(dwl::WholeBodyState& state)
 
 	// Getting the actual desired whole-body state
 	dwl_msgs::WholeBodyState state_msgs = plan_.trajectory[trajectory_counter_];
+
+	// Updating the time information
+	state.time = state_msgs.time;
 
 	// Updating the base states
 	unsigned int num_base = state_msgs.base.size();

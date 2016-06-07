@@ -10,6 +10,7 @@
 
 // Messages headers
 #include <dwl_msgs/WholeBodyState.h>
+#include <dwl_msgs/WholeBodyController.h>
 #include <dwl_msgs/WholeBodyTrajectory.h>
 #include <dwl_msgs/ReducedTrajectory.h>
 
@@ -56,6 +57,15 @@ class PlannerCommons
 									  dwl::model::FloatingBaseSystem& system);
 
 		/**
+		 * @brief Creates a subscriber of the controller state. The name of the
+		 * topic is defined as node_ns/state
+		 * @param ros::NodeHandle ROS node handle used by the subscription
+		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 */
+		void initControllertStateSubscriber(ros::NodeHandle node,
+											dwl::model::FloatingBaseSystem& system);
+
+		/**
 		 * @brief Publishes the motion plan messages
 		 * @param const dwl::WholeBodyState& Current whole-body state
 		 * @param const dwl::WholeBodyTrajectory& Planned whole-body trajectory
@@ -77,11 +87,33 @@ class PlannerCommons
 		void updateRobotStateSubscription(dwl::WholeBodyState& robot_state);
 
 		/**
+		 * @brief Updates the controller state subscription status which is
+		 * real-time friendly. This provides us the current robot states
+		 * @param dwl::WholeBodyState& Desired whole-body state
+		 * @param dwl::WholeBodyState& Actual whole-body state
+		 * @param dwl::WholeBodyState& Error whole-body state
+		 */
+		void updateControllerStateSubscription(dwl::WholeBodyState& desired,
+											   dwl::WholeBodyState& actual,
+											   dwl::WholeBodyState& error);
+
+		/**
 		 * @brief Gets the robot state if there is a received message
 		 * @param dwl::WholeBodyState& Received robot state
 		 * @return Returns true if there is a received robot state
 		 */
 		bool getRobotState(dwl::WholeBodyState& robot_state);
+
+		/**
+		 * @brief Gets the controller state if there is a received message
+		 * @param dwl::WholeBodyState& Desired whole-body state
+		 * @param dwl::WholeBodyState& Actual whole-body state
+		 * @param dwl::WholeBodyState& Error whole-body state
+		 * @return Returns true if there is a received controller state
+		 */
+		bool getControllerState(dwl::WholeBodyState& desired,
+								dwl::WholeBodyState& actual,
+								dwl::WholeBodyState& error);
 
 
 	private:
@@ -98,6 +130,13 @@ class PlannerCommons
 		 * @param const dwl_msgs::WholeBodyStateConstPtr& Whole-body state message
 		 */
 		void setRobotStateCB(const dwl_msgs::WholeBodyStateConstPtr& msg);
+
+
+		/**
+		 * @brief Controller state callback function of the subscriber
+		 * @param const dwl_msgs::WholeBodyControllerConstPtr& Whole-body state message
+		 */
+		void setControllerStateCB(const dwl_msgs::WholeBodyControllerConstPtr& msg);
 
 
 		/** @brief the floating-base system information */
@@ -118,11 +157,20 @@ class PlannerCommons
 		/** @brief Robot state message */
 		dwl_msgs::WholeBodyState robot_state_msg_;
 
+		/** @brief Controller state message */
+		dwl_msgs::WholeBodyController controller_state_msg_;
+
 		/** @brief Robot state subscriber */
 		ros::Subscriber robot_state_sub_;
 
-		/** @brief Realtime buffer for the base state estimation  */
+		/** @brief Controller state subscriber */
+		ros::Subscriber controller_state_sub_;
+
+		/** @brief Realtime buffer for the whole-body state */
 		realtime_tools::RealtimeBuffer<dwl_msgs::WholeBodyState> robot_state_buffer_;
+
+		/** @brief Realtime buffer for the whole-body controller state */
+		realtime_tools::RealtimeBuffer<dwl_msgs::WholeBodyController> controller_state_buffer_;
 
 		/** @brief Label that indicates if motion plan publisher is initialized */
 		bool init_motion_plan_pub_;
@@ -136,6 +184,9 @@ class PlannerCommons
 
 		/** @brief Label that indicates that robot state has been received */
 		bool received_robot_state_;
+
+		/** @brief Label that indicates that controller state has been received */
+		bool received_controller_state_;
 };
 
 } //@namespace dwl_msgs
