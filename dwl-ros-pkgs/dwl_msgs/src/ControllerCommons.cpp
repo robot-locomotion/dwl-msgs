@@ -25,8 +25,9 @@ void ControllerCommons::initControllerStatePublisher(ros::NodeHandle node,
 {
 	// Getting the publish period
 	if (!node.getParam("publish_rate", controller_publish_rate_)) {
-		ROS_WARN("Parameter 'publish_rate' not set (default value is 50). It has to be"
-				"defined in %s/publish_rate", node.getNamespace().c_str());
+		ROS_WARN("Parameter of ControllerState publisher 'publish_rate' not set"
+				" (default value is 50). It has to be defined in"
+				" %s/publish_rate", node.getNamespace().c_str());
 	}
 
 	// Setting the floating-base system info
@@ -60,8 +61,9 @@ void ControllerCommons::initWholeBodyStatePublisher(ros::NodeHandle node,
 {
 	// Getting the publish period
 	if (!node.getParam("publish_rate", robot_publish_rate_)) {
-		ROS_WARN("Parameter 'publish_rate' not set (default value is 50). It has to be"
-				"defined in %s/publish_rate", node.getNamespace().c_str());
+		ROS_WARN("Parameter of WholeBodyState publisher 'publish_rate' not set"
+				" (default value is 50). It has to be defined in"
+				" %s/publish_rate", node.getNamespace().c_str());
 	}
 
 	// Setting the floating-base system info
@@ -90,8 +92,9 @@ void ControllerCommons::initStateEstimationPublisher(ros::NodeHandle node)
 {
 	// Getting the publish period
 	if (!node.getParam("publish_rate", odom_publish_rate_)) {
-		ROS_WARN("Parameter 'publish_rate' not set (default value is 50). It has to be"
-				"defined in %s/publish_rate", node.getNamespace().c_str());
+		ROS_WARN("Parameter of StateEstimation publisher 'publish_rate' not set"
+				" (default value is 50). It has to be defined in"
+				" %s/publish_rate", node.getNamespace().c_str());
 	}
 
 	// Initializing the real-time publisher
