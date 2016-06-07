@@ -5,7 +5,7 @@ namespace dwl_msgs
 {
 
 ControllerCommons::ControllerCommons() : new_plan_(false), init_base_state_(false),
-		num_traj_points_(0), trajectory_counter_(0), controller_publish_rate_(50),
+		num_traj_points_(0), trajectory_counter_(0), controller_publish_rate_(250),
 		robot_publish_rate_(250), odom_publish_rate_(250), imu_publish_rate_(250),
 		init_controller_state_pub_(false), init_robot_state_pub_(false),
 		init_odom_state_pub_(false), init_imu_state_pub_(false)
@@ -355,12 +355,11 @@ void ControllerCommons::publishWholeBodyState(const ros::Time& time,
 			ros::Duration(1.0 / robot_publish_rate_) < time) {
 		// try to publish
 		if (robot_state_pub_->trylock()) {
-			robot_state_pub_->msg_.header.stamp = ros::Time::now();
-			robot_state_pub_->msg_.header.frame_id = system_.getFloatingBaseBody();
-
 			// we're actually publishing, so increment time
 			last_robot_publish_time_ += ros::Duration(1.0 / robot_publish_rate_);
 			robot_state_pub_->msg_.time = state.time;
+			robot_state_pub_->msg_.header.stamp = time;
+			robot_state_pub_->msg_.header.frame_id = system_.getFloatingBaseBody();
 
 			// Populating base states messages
 			unsigned int counter = 0;
@@ -477,11 +476,10 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 		// try to publish
 		if (base_state_pub_->trylock()) {
 			// we're actually publishing, so increment time
-			last_controller_publish_time_ += ros::Duration(1.0 / odom_publish_rate_);
-			base_state_pub_->msg_.header.stamp = time;
-
+			last_odom_publish_time_ += ros::Duration(1.0 / odom_publish_rate_);
 			base_state_pub_->msg_.header.stamp = time;
 			base_state_pub_->msg_.header.frame_id = "world";
+
 			base_state_pub_->msg_.pose.pose.position.x = base_pos(dwl::rbd::LX);
 			base_state_pub_->msg_.pose.pose.position.y = base_pos(dwl::rbd::LY);
 			base_state_pub_->msg_.pose.pose.position.z = base_pos(dwl::rbd::LZ);
@@ -503,6 +501,7 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 		tf_msg.header.stamp = time;
 		tf_msg.child_frame_id = "base_link";
 		tf_msg.header.frame_id = "world";
+
 		tf_msg.transform.translation.x = base_pos(dwl::rbd::LX);
 		tf_msg.transform.translation.y = base_pos(dwl::rbd::LY);
 		tf_msg.transform.translation.z = base_pos(dwl::rbd::LZ);
@@ -530,7 +529,7 @@ void ControllerCommons::publishImuState(const ros::Time& time,
 		// try to publish
 		if (imu_state_pub_->trylock()) {
 			// we're actually publishing, so increment time
-			last_controller_publish_time_ += ros::Duration(1.0 / odom_publish_rate_);
+			last_imu_publish_time_ += ros::Duration(1.0 / odom_publish_rate_);
 			base_state_pub_->msg_.header.stamp = time;
 			imu_state_pub_->msg_.header.stamp = time;
 			imu_state_pub_->msg_.orientation.x = imu.orientation.x();
