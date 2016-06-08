@@ -98,8 +98,11 @@ void ControllerCommons::initStateEstimationPublisher(ros::NodeHandle node)
 	}
 
 	// Initializing the real-time publisher
+	ros::NodeHandle nh; //Nodehandle without prefix
 	base_state_pub_.reset(new
 			realtime_tools::RealtimePublisher<nav_msgs::Odometry> (node, "odom", 1));
+	tf_pub_.reset(new
+			realtime_tools::RealtimePublisher<tf2_msgs::TFMessage> (nh, "tf", 100));
 
 	init_odom_state_pub_ = true;
 }
@@ -509,7 +512,13 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 		tf_msg.transform.rotation.y = base_quat.y();
 		tf_msg.transform.rotation.z = base_quat.z();
 		tf_msg.transform.rotation.w = base_quat.w();
-		odom_tf_broadcaster_.sendTransform(tf_msg);
+		
+		tf2_msgs::TFMessage tf2_msg;
+		tf2_msg.transforms.push_back(tf_msg);
+		if (tf_pub_->trylock()) {
+			tf_pub_->msg_ = tf2_msg;
+			tf_pub_->unlockAndPublish();
+		}
 	}
 }
 
