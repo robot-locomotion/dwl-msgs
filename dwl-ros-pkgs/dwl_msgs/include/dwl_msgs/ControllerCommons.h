@@ -13,7 +13,7 @@
 #include <dwl_msgs/WholeBodyController.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
-#include <tf/transform_broadcaster.h>
+#include <tf2_msgs/TFMessage.h>
 
 
 namespace dwl_msgs
@@ -200,8 +200,8 @@ class ControllerCommons
 		/** @brief Base state estimation message */
 		nav_msgs::Odometry base_state_;
 
-		/** @brief Odom TF broadcaster */
-		tf::TransformBroadcaster odom_tf_broadcaster_;
+		/** @brief Odom TF publisher */
+		boost::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::TFMessage> > tf_pub_;
 
 		/** @brief Base state estimation subscriber */
 		ros::Subscriber base_state_sub_;
