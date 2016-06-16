@@ -539,7 +539,6 @@ void ControllerCommons::publishImuState(const ros::Time& time,
 		if (imu_state_pub_->trylock()) {
 			// we're actually publishing, so increment time
 			last_imu_publish_time_ += ros::Duration(1.0 / odom_publish_rate_);
-			base_state_pub_->msg_.header.stamp = time;
 			imu_state_pub_->msg_.header.stamp = time;
 			imu_state_pub_->msg_.orientation.x = imu.orientation.x();
 			imu_state_pub_->msg_.orientation.y = imu.orientation.y();
