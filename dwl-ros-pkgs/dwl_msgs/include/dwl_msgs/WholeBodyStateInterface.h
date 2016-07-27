@@ -8,6 +8,11 @@
 namespace dwl_msgs
 {
 
+/**
+ * @brief The WholeBodyStateInterface class
+ * This class provides a interface between the WholeBodyState ROS messages
+ * (dwl_msgs::WholeBodyState) and the WholeBodyState class (dwl::WholeBodyState)
+ */
 class WholeBodyStateInterface
 {
 	public:
