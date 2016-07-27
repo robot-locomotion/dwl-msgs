@@ -52,7 +52,8 @@ link_directories(${catkin_LIBRARY_DIRS})
 link_directories(${dwl_LIBRARY_DIRS})
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME}  src/ControllerCommons.cpp
+add_library(${PROJECT_NAME}  src/WholeBodyStateInferface.cpp
+                             src/ControllerCommons.cpp
                              src/PlannerCommons.cpp)
 target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES}
                                        ${dwl_LIBRARIES})
