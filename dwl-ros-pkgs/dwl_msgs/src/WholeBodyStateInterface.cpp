@@ -32,6 +32,10 @@ WholeBodyStateInterface::~WholeBodyStateInterface()
 void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 											 const dwl::WholeBodyState& state)
 {
+	if (!is_system_)
+		printf(YELLOW "Warning: you cannot write the dwl_msg::WholeBodyState "
+				"because it wasn't define the FloatingBaseSystem\n" COLOR_RESET);
+
 	// Filling the time information
 	msg.time = state.time;
 
@@ -138,6 +142,10 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 					  	  	  	  	  	  	   const dwl_msgs::WholeBodyState& msg)
 {
+	if (!is_system_)
+		printf(YELLOW "Warning: you cannot write the dwl::WholeBodyState "
+				"because it wasn't define the FloatingBaseSystem\n" COLOR_RESET);
+
 	// Writing the base states
 	unsigned num_base = msg.base.size();
 	for (unsigned int i = 0; i < num_base; i++) {
