@@ -93,8 +93,8 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 		dwl::rbd::Vector6d effort;
 
 		// Defining the contact iterators
-		dwl::rbd::BodyVector::const_iterator pos_it, vel_it, acc_it;
-		dwl::rbd::BodyWrench::const_iterator eff_it;
+		dwl::rbd::BodyVectorXd::const_iterator pos_it, vel_it, acc_it;
+		dwl::rbd::BodyVector6d::const_iterator eff_it;
 
 		// Filling the contact state
 		pos_it = state.contact_pos.find(name);

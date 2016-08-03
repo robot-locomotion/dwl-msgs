@@ -153,7 +153,7 @@ void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyTrajectory& trajec
 			// Filling the support region
 			reduced_plan_msg_.trajectory[k].support_region.resize(state.support_region.size());
 			unsigned int idx = 0;
-			for (dwl::rbd::BodyPosition::const_iterator vertex_it = state.support_region.begin();
+			for (dwl::rbd::BodyVector3d::const_iterator vertex_it = state.support_region.begin();
 					vertex_it != state.support_region.end(); vertex_it++) {
 				Eigen::Vector3d vertex = vertex_it->second;
 				reduced_plan_msg_.trajectory[k].support_region[idx].x = vertex(dwl::rbd::X);
@@ -229,8 +229,8 @@ void PlannerCommons::writeWholeBodyStateMessage(dwl_msgs::WholeBodyState& msg,
 		dwl::rbd::Vector6d effort;
 
 		// Defining the contact iterators
-		dwl::rbd::BodyVector::const_iterator pos_it, vel_it, acc_it;
-		dwl::rbd::BodyWrench::const_iterator eff_it;
+		dwl::rbd::BodyVectorXd::const_iterator pos_it, vel_it, acc_it;
+		dwl::rbd::BodyVector6d::const_iterator eff_it;
 
 		// Filling the contact state
 		pos_it = state.contact_pos.find(name);
