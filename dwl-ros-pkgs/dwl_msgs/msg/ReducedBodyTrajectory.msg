@@ -1,4 +1,4 @@
-# This message describes the reduced trajectory of rigid body system.
+# This message describes the reduced-body trajectory of rigid body system.
 #
 # A reduced trajectory is defined by a sequence of reduced states.
 # A reduced state is defined by the center of mass (CoM) position,
@@ -16,7 +16,7 @@
 Header header
 
 # The actual reduced trajectory
-dwl_msgs/ReducedState actual
+dwl_msgs/ReducedBodyState actual
 
 # The reduced trajectory
-dwl_msgs/ReducedState[] trajectory
+dwl_msgs/ReducedBodyState[] trajectory

@@ -42,7 +42,7 @@ void PlannerCommons::initReducedPlanPublisher(ros::NodeHandle node_pub,
 {
 	// Initializing the publisher
 	reduced_plan_pub_ =
-			node_pub.advertise<dwl_msgs::ReducedTrajectory>(node_pub.getNamespace() + "/reduced_plan", 1);
+			node_pub.advertise<dwl_msgs::ReducedBodyTrajectory>(node_pub.getNamespace() + "/reduced_plan", 1);
 
 	// Reading the world frame id
 	if (!node_params.getParam("world_frame", world_frame_id_))
@@ -100,6 +100,7 @@ void PlannerCommons::publishMotionPlan(const dwl::WholeBodyState& current_state,
 		writeWholeBodyStateMessage(motion_plan_msg_.actual,
 								   current_state);
 
+		// Filling the trajectory
 		motion_plan_msg_.trajectory.resize(trajectory.size());
 		for (unsigned int i = 0; i < trajectory.size(); i++)
 			writeWholeBodyStateMessage(motion_plan_msg_.trajectory[i], trajectory[i]);
@@ -110,7 +111,8 @@ void PlannerCommons::publishMotionPlan(const dwl::WholeBodyState& current_state,
 }
 
 
-void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyTrajectory& trajectory)
+void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyState& current_state,
+										const dwl::ReducedBodyTrajectory& trajectory)
 {
 	// Sanity check of the publisher initialization
 	if (!init_reduced_plan_pub_) {
@@ -131,37 +133,15 @@ void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyTrajectory& trajec
 		reduced_plan_msg_.header.stamp = ros::Time::now();
 		reduced_plan_msg_.header.frame_id = world_frame_id_;
 
+		// Filling the current state
+		writeReducedBodyStateMessage(reduced_plan_msg_.actual,
+									 current_state);
+
 		// Filling the trajectory
 		reduced_plan_msg_.trajectory.resize(trajectory.size());
-		for (unsigned int k = 0; k < trajectory.size(); k++) {
-			dwl::ReducedBodyState state = trajectory[k];
-
-			// Filling the time
-			reduced_plan_msg_.trajectory[k].time = state.time;
-
-			// Filling the CoM and CoP states
-			Eigen::Vector3d com = state.com_pos;
-			Eigen::Vector3d cop = state.cop;
-			reduced_plan_msg_.trajectory[k].center_of_mass.x = com(dwl::rbd::X);
-			reduced_plan_msg_.trajectory[k].center_of_mass.y = com(dwl::rbd::Y);
-			reduced_plan_msg_.trajectory[k].center_of_mass.z = com(dwl::rbd::Z);
-
-			reduced_plan_msg_.trajectory[k].center_of_pressure.x = cop(dwl::rbd::X);
-			reduced_plan_msg_.trajectory[k].center_of_pressure.y = cop(dwl::rbd::Y);
-			reduced_plan_msg_.trajectory[k].center_of_pressure.z = cop(dwl::rbd::Z);
-
-			// Filling the support region
-			reduced_plan_msg_.trajectory[k].support_region.resize(state.support_region.size());
-			unsigned int idx = 0;
-			for (dwl::rbd::BodyVector3d::const_iterator vertex_it = state.support_region.begin();
-					vertex_it != state.support_region.end(); vertex_it++) {
-				Eigen::Vector3d vertex = vertex_it->second;
-				reduced_plan_msg_.trajectory[k].support_region[idx].x = vertex(dwl::rbd::X);
-				reduced_plan_msg_.trajectory[k].support_region[idx].y = vertex(dwl::rbd::Y);
-				reduced_plan_msg_.trajectory[k].support_region[idx].z = vertex(dwl::rbd::Z);
-				++idx;
-			}
-		}
+		for (unsigned int k = 0; k < trajectory.size(); k++)
+			writeReducedBodyStateMessage(reduced_plan_msg_.trajectory[k],
+										 trajectory[k]);
 
 		// Publishing the motion plan
 		reduced_plan_pub_.publish(reduced_plan_msg_);
@@ -271,6 +251,36 @@ void PlannerCommons::writeWholeBodyStateMessage(dwl_msgs::WholeBodyState& msg,
 			// Incrementing the contact counter
 			contact_counter++;
 		}
+	}
+}
+
+
+void PlannerCommons::writeReducedBodyStateMessage(dwl_msgs::ReducedBodyState& msg,
+												  const dwl::ReducedBodyState& state)
+{
+	// Filling the time
+	msg.time = state.time;
+
+	// Filling the CoM position
+	msg.center_of_mass.x = state.com_pos(dwl::rbd::X);
+	msg.center_of_mass.y = state.com_pos(dwl::rbd::Y);
+	msg.center_of_mass.z = state.com_pos(dwl::rbd::Z);
+
+	// Filling the CoP position
+	msg.center_of_pressure.x = state.cop(dwl::rbd::X);
+	msg.center_of_pressure.y = state.cop(dwl::rbd::Y);
+	msg.center_of_pressure.z = state.cop(dwl::rbd::Z);
+
+	// Filling the support position
+	msg.support_region.resize(state.support_region.size());
+	unsigned int idx = 0;
+	for (dwl::rbd::BodyVector3d::const_iterator vertex_it = state.support_region.begin();
+			vertex_it != state.support_region.end(); vertex_it++) {
+		Eigen::Vector3d vertex = vertex_it->second;
+		msg.support_region[idx].x = vertex(dwl::rbd::X);
+		msg.support_region[idx].y = vertex(dwl::rbd::Y);
+		msg.support_region[idx].z = vertex(dwl::rbd::Z);
+		++idx;
 	}
 }
 
