@@ -1,4 +1,4 @@
-# This message describes the reduced state of rigid body system.
+# This message describes the reduced-body state of rigid body system.
 #
 # A reduced state is defined by the center of mass (CoM) position,
 # center of pressure (CoP), or zero moment point (ZMP), position

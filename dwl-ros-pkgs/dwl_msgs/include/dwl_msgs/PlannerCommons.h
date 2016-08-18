@@ -10,9 +10,10 @@
 
 // Messages headers
 #include <dwl_msgs/WholeBodyState.h>
-#include <dwl_msgs/WholeBodyController.h>
 #include <dwl_msgs/WholeBodyTrajectory.h>
-#include <dwl_msgs/ReducedTrajectory.h>
+#include <dwl_msgs/ReducedBodyState.h>
+#include <dwl_msgs/ReducedBodyTrajectory.h>
+#include <dwl_msgs/WholeBodyController.h>
 
 
 namespace dwl_msgs
@@ -75,9 +76,11 @@ class PlannerCommons
 
 		/**
 		 * @brief Publishes the reduced motion plan messages
+		 * @param const dwl::ReducedBodyState& Current reduced-body state
 		 * @param const dwl::ReducedTrajectory& Planned reduced-body state
 		 */
-		void publishReducedPlan(const dwl::ReducedBodyTrajectory& trajectory);
+		void publishReducedPlan(const dwl::ReducedBodyState& current_state,
+								const dwl::ReducedBodyTrajectory& trajectory);
 
 		/**
 		 * @brief Updates the robot state subscription status which is
@@ -118,12 +121,20 @@ class PlannerCommons
 
 	private:
 		/**
-		 * @brief Writes the whole-body state message from a locomotion state
+		 * @brief Writes the whole-body state message from a dwl::WholeBodyState
 		 * @param dwl_msgs::WholeBodyState& Whole-body state message
 		 * @param const dwl::WholeBodyState& Whole-body state
 		 */
 		void writeWholeBodyStateMessage(dwl_msgs::WholeBodyState& msg,
 	 	 	 	 	 					const dwl::WholeBodyState& state);
+
+		/**
+		 * @brief Writes the reduced-body state message from dwl::ReducedBodyState
+		 * @param dwl_msgs::ReducedBodyState& Reduced-body state message
+		 * @param const dwl::ReducedBodyState& Reduced-body sate
+		 */
+		void writeReducedBodyStateMessage(dwl_msgs::ReducedBodyState& msg,
+										  const dwl::ReducedBodyState& state);
 
 		/**
 		 * @brief Robot state callback function of the subscriber
@@ -152,7 +163,7 @@ class PlannerCommons
 		dwl_msgs::WholeBodyTrajectory motion_plan_msg_;
 
 		/** @brief Reduced-motion plan message */
-		dwl_msgs::ReducedTrajectory reduced_plan_msg_;
+		dwl_msgs::ReducedBodyTrajectory reduced_plan_msg_;
 
 		/** @brief Robot state message */
 		dwl_msgs::WholeBodyState robot_state_msg_;
