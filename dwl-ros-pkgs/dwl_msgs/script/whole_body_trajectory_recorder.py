@@ -4,7 +4,7 @@ import rosbag
 import time
 import message_filters
 from datetime import datetime
-from dwl_msgs.msg import WholeBodyTrajectory, ReducedTrajectory
+from dwl_msgs.msg import WholeBodyTrajectory, ReducedBodyTrajectory
 from std_msgs.msg import Bool
 
 
@@ -12,7 +12,7 @@ class WholeBodyTrajectoryRecorder():
     def __init__(self):
         # Defining the subscribers
         self.full_sub = message_filters.Subscriber('/hyq/plan', WholeBodyTrajectory)
-        self.reduced_sub = message_filters.Subscriber('/hyq/reduced_plan', ReducedTrajectory)
+        self.reduced_sub = message_filters.Subscriber('/hyq/reduced_plan', ReducedBodyTrajectory)
         
         # Setting up the time synchronization
         ts = message_filters.ApproximateTimeSynchronizer([self.full_sub, self.reduced_sub], 10, 0.1)
