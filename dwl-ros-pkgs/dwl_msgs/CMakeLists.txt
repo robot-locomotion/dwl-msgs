@@ -16,6 +16,7 @@ find_package(dwl REQUIRED)
 
 add_message_files(
    FILES
+    Vector2.msg
     Region.msg
     Contact.msg
     ContactSequence.msg
