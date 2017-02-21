@@ -310,6 +310,7 @@ void PlannerCommons::updateRobotStateSubscription(dwl::WholeBodyState& robot_sta
 	// Setting the joint states
 	dwl::urdf_model::JointID joints = system_.getJoints();
 	unsigned num_joints = robot_state_msg_.joints.size();
+	robot_state.setJointDoF(num_joints);
 	for (unsigned int i = 0; i < num_joints; i++) {
 		std::string name = robot_state_msg_.joints[i].name;
 
