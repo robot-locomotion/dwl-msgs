@@ -16,7 +16,7 @@ WholeBodyStateInterface::WholeBodyStateInterface(const dwl::model::FloatingBaseS
 }
 
 
-void WholeBodyStateInterface::reset(dwl::model::FloatingBaseSystem& system)
+void WholeBodyStateInterface::reset(const dwl::model::FloatingBaseSystem& system)
 {
 	fbs_ = system;
 	is_system_ = true;

@@ -28,9 +28,9 @@ class WholeBodyStateInterface
 
 		/**
 		 * @brief Resets the floating-base system information
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system
+		 * @param const dwl::model::FloatingBaseSystem& Floating-base system
 		 */
-		void reset(dwl::model::FloatingBaseSystem& system);
+		void reset(const dwl::model::FloatingBaseSystem& system);
 
 		/**
 		 * @brief Writes a dwl_msgs::WholeBodyState from a dwl::WholeBodyState
@@ -74,6 +74,7 @@ class WholeBodyStateInterface
 		/** @brief Indicates if it was defined the floating-base system */
 		bool is_system_;
 };
+
 } //@namespace dwl_msgs
 
 #endif
