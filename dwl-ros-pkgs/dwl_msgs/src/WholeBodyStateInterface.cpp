@@ -157,6 +157,9 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 		printf(YELLOW "Warning: you cannot write the dwl::WholeBodyState "
 				"because it wasn't define the FloatingBaseSystem\n" COLOR_RESET);
 
+	// Writing the time information
+	state.time = msg.time;
+
 	// Writing the base states
 	unsigned num_base = msg.base.size();
 	for (unsigned int i = 0; i < num_base; i++) {
