@@ -5,11 +5,10 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
-#include <dwl/model/FloatingBaseSystem.h>
+#include <dwl_msgs/WholeBodyStateInterface.h>
 #include <dwl/utils/DynamicLocomotion.h>
-#include <dwl/utils/RigidBodyDynamics.h>
 
-#include <dwl_msgs/WholeBodyTrajectory.h>
+// Message headers
 #include <dwl_msgs/WholeBodyController.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
@@ -173,6 +172,9 @@ class ControllerCommons
 
 
 	private:
+		/** @brief Robot state message interfaces */
+		dwl_msgs::WholeBodyStateInterface wb_iface_;
+
 		/**
 		 * @brief Base state estimation callback function of the subscriber
 		 * @param const nav_msgs::OdometryConstPtr& State estimation message

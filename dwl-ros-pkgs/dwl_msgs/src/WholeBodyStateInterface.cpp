@@ -10,13 +10,13 @@ WholeBodyStateInterface::WholeBodyStateInterface() : is_system_(false)
 }
 
 
-WholeBodyStateInterface::WholeBodyStateInterface(dwl::model::FloatingBaseSystem& system) : is_system_(true)
+WholeBodyStateInterface::WholeBodyStateInterface(const dwl::model::FloatingBaseSystem& system) : is_system_(true)
 {
 	fbs_ = system;
 }
 
 
-void WholeBodyStateInterface::reset(dwl::model::FloatingBaseSystem& system)
+void WholeBodyStateInterface::reset(const dwl::model::FloatingBaseSystem& system)
 {
 	fbs_ = system;
 	is_system_ = true;
@@ -139,12 +139,26 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 }
 
 
+void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyTrajectory& msg,
+											 const dwl::WholeBodyTrajectory& traj)
+{
+	// Filling the trajectory
+	unsigned int num_points = traj.size();
+	msg.trajectory.resize(num_points);
+	for (unsigned int i = 0; i < num_points; i++)
+		writeToMessage(msg.trajectory[i], traj[i]);
+}
+
+
 void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 					  	  	  	  	  	  	   const dwl_msgs::WholeBodyState& msg)
 {
 	if (!is_system_)
 		printf(YELLOW "Warning: you cannot write the dwl::WholeBodyState "
 				"because it wasn't define the FloatingBaseSystem\n" COLOR_RESET);
+
+	// Writing the time information
+	state.time = msg.time;
 
 	// Writing the base states
 	unsigned num_base = msg.base.size();
@@ -182,6 +196,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 	}
 
 	// Writing the contact states
+	Eigen::Vector3d contact_state;
 	unsigned int num_contacts = msg.contacts.size();
 	for (unsigned int i = 0; i < num_contacts; i++) {
 		// Getting the contact message
@@ -191,25 +206,22 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 		std::string name = contact_msg.name;
 
 		// Updating the contact position
-		Eigen::VectorXd position(3);
-		position << contact_msg.position.x,
-					contact_msg.position.y,
-					contact_msg.position.z;
-		state.contact_pos[name] = position;
+		contact_state(dwl::rbd::X) = contact_msg.position.x;
+		contact_state(dwl::rbd::Y) = contact_msg.position.y;
+		contact_state(dwl::rbd::Z) = contact_msg.position.z;
+		state.contact_pos[name] = contact_state;
 
 		// Updating the contact velocity
-		Eigen::VectorXd velocity(3);
-		velocity << contact_msg.velocity.x,
-					contact_msg.velocity.y,
-					contact_msg.velocity.z;
-		state.contact_vel[name] = velocity;
+		contact_state(dwl::rbd::X) = contact_msg.velocity.x;
+		contact_state(dwl::rbd::Y) = contact_msg.velocity.y;
+		contact_state(dwl::rbd::Z) = contact_msg.velocity.z;
+		state.contact_vel[name] = contact_state;
 
 		// Updating the contact acceleration
-		Eigen::VectorXd acceleration(3);
-		acceleration << contact_msg.acceleration.x,
-						contact_msg.acceleration.y,
-						contact_msg.acceleration.z;
-		state.contact_acc[name] = acceleration;
+		contact_state(dwl::rbd::X) = contact_msg.acceleration.x;
+		contact_state(dwl::rbd::Y) = contact_msg.acceleration.y;
+		contact_state(dwl::rbd::Z) = contact_msg.acceleration.z;
+		state.contact_acc[name] = contact_state;
 
 		// Updating the contact wrench
 		dwl::rbd::Vector6d effort;
@@ -221,6 +233,17 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 		effort(dwl::rbd::LZ) = contact_msg.wrench.force.z;
 		state.contact_eff[name] = effort;
 	}
+}
+
+
+void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyTrajectory& traj,
+											   const dwl_msgs::WholeBodyTrajectory& msg)
+{
+	// Filling the trajectory
+	unsigned int num_points = msg.trajectory.size();
+	traj.resize(num_points);
+	for (unsigned int i = 0; i < num_points; i++)
+		writeFromMessage(traj[i], msg.trajectory[i]);
 }
 
 } //@namespace dwl_msgs

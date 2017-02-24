@@ -54,6 +54,7 @@ link_directories(${dwl_LIBRARY_DIRS})
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME}  src/WholeBodyStateInterface.cpp
+                             src/ReducedBodyStateInterface.cpp
                              src/ControllerCommons.cpp
                              src/PlannerCommons.cpp)
 target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES}
