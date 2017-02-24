@@ -131,47 +131,13 @@ void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyState& current_sta
 		reduced_plan_msg_.header.frame_id = world_frame_id_;
 
 		// Filling the current state
-		writeReducedBodyStateMessage(reduced_plan_msg_.actual,
-									 current_state);
+		rb_iface_.writeToMessage(reduced_plan_msg_.actual, current_state);
 
 		// Filling the trajectory
-		reduced_plan_msg_.trajectory.resize(trajectory.size());
-		for (unsigned int k = 0; k < trajectory.size(); k++)
-			writeReducedBodyStateMessage(reduced_plan_msg_.trajectory[k],
-										 trajectory[k]);
+		rb_iface_.writeToMessage(reduced_plan_msg_, trajectory);
 
 		// Publishing the motion plan
 		reduced_plan_pub_.publish(reduced_plan_msg_);
-	}
-}
-
-
-void PlannerCommons::writeReducedBodyStateMessage(dwl_msgs::ReducedBodyState& msg,
-												  const dwl::ReducedBodyState& state)
-{
-	// Filling the time
-	msg.time = state.time;
-
-	// Filling the CoM position
-	msg.center_of_mass.x = state.com_pos(dwl::rbd::X);
-	msg.center_of_mass.y = state.com_pos(dwl::rbd::Y);
-	msg.center_of_mass.z = state.com_pos(dwl::rbd::Z);
-
-	// Filling the CoP position
-	msg.center_of_pressure.x = state.cop(dwl::rbd::X);
-	msg.center_of_pressure.y = state.cop(dwl::rbd::Y);
-	msg.center_of_pressure.z = state.cop(dwl::rbd::Z);
-
-	// Filling the support position
-	msg.support_region.resize(state.support_region.size());
-	unsigned int idx = 0;
-	for (dwl::rbd::BodyVector3d::const_iterator vertex_it = state.support_region.begin();
-			vertex_it != state.support_region.end(); vertex_it++) {
-		Eigen::Vector3d vertex = vertex_it->second;
-		msg.support_region[idx].x = vertex(dwl::rbd::X);
-		msg.support_region[idx].y = vertex(dwl::rbd::Y);
-		msg.support_region[idx].z = vertex(dwl::rbd::Z);
-		++idx;
 	}
 }
 

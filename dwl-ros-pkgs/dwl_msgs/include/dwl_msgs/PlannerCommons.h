@@ -5,11 +5,10 @@
 #include <realtime_tools/realtime_buffer.h>
 
 #include <dwl_msgs/WholeBodyStateInterface.h>
+#include <dwl_msgs/ReducedBodyStateInterface.h>
 #include <dwl/locomotion/WholeBodyTrajectoryOptimization.h>
 
 // Messages headers
-#include <dwl_msgs/ReducedBodyState.h>
-#include <dwl_msgs/ReducedBodyTrajectory.h>
 #include <dwl_msgs/WholeBodyController.h>
 
 
@@ -117,15 +116,9 @@ class PlannerCommons
 
 
 	private:
+		/** @brief Robot state and trajectory message interfaces */
 		dwl_msgs::WholeBodyStateInterface wb_iface_;
-
-		/**
-		 * @brief Writes the reduced-body state message from dwl::ReducedBodyState
-		 * @param dwl_msgs::ReducedBodyState& Reduced-body state message
-		 * @param const dwl::ReducedBodyState& Reduced-body sate
-		 */
-		void writeReducedBodyStateMessage(dwl_msgs::ReducedBodyState& msg,
-										  const dwl::ReducedBodyState& state);
+		dwl_msgs::ReducedBodyStateInterface rb_iface_;
 
 		/**
 		 * @brief Robot state callback function of the subscriber
@@ -139,10 +132,6 @@ class PlannerCommons
 		 * @param const dwl_msgs::WholeBodyControllerConstPtr& Whole-body state message
 		 */
 		void setControllerStateCB(const dwl_msgs::WholeBodyControllerConstPtr& msg);
-
-
-		/** @brief the floating-base system information */
-		dwl::model::FloatingBaseSystem system_;
 
 		/** @brief Motion plan publisher */
 		ros::Publisher motion_plan_pub_;
