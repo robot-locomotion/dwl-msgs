@@ -23,8 +23,7 @@ void PlannerCommons::initMotionPlanStatePublisher(ros::NodeHandle node_pub,
 												  dwl::model::FloatingBaseSystem& system)
 {
 	// Setting the floating-base system info
-	system_ = system;
-	wb_iface_.reset(system_);
+	wb_iface_.reset(system);
 
 	// Initializing the publisher
 	motion_plan_pub_ =
@@ -57,8 +56,7 @@ void PlannerCommons::initRobotStateSubscriber(ros::NodeHandle node,
 											  dwl::model::FloatingBaseSystem& system)
 {
 	// Setting the floating-base system info
-	system_ = system;
-	wb_iface_.reset(system_);
+	wb_iface_.reset(system);
 
 	robot_state_sub_ = node.subscribe<dwl_msgs::WholeBodyState>(node.getNamespace() + "/robot_states", 1,
 			&PlannerCommons::setRobotStateCB, this, ros::TransportHints().tcpNoDelay());
@@ -69,8 +67,7 @@ void PlannerCommons::initControllertStateSubscriber(ros::NodeHandle node,
 													dwl::model::FloatingBaseSystem& system)
 {
 	// Setting the floating-base system info
-	system_ = system;
-	wb_iface_.reset(system_);
+	wb_iface_.reset(system);
 
 	controller_state_sub_ = node.subscribe<dwl_msgs::WholeBodyController>(node.getNamespace() + "/state", 1,
 			&PlannerCommons::setControllerStateCB, this, ros::TransportHints().tcpNoDelay());
@@ -181,76 +178,8 @@ void PlannerCommons::writeReducedBodyStateMessage(dwl_msgs::ReducedBodyState& ms
 
 void PlannerCommons::updateRobotStateSubscription(dwl::WholeBodyState& robot_state)
 {
-	// Setting the base states
-	unsigned num_base = robot_state_msg_.base.size();
-	for (unsigned int i = 0; i < num_base; i++) {
-		unsigned base_id = robot_state_msg_.base[i].id;
-
-		robot_state.base_pos(base_id) = robot_state_msg_.base[i].position;
-		robot_state.base_vel(base_id) = robot_state_msg_.base[i].velocity;
-		robot_state.base_acc(base_id) = robot_state_msg_.base[i].acceleration;
-	}
-
-	// Sanity check: checking the size of the joint states
-	if (robot_state.joint_pos.size() != system_.getJointDoF())
-		robot_state.joint_pos = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (robot_state.joint_vel.size() != system_.getJointDoF())
-		robot_state.joint_vel = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (robot_state.joint_acc.size() != system_.getJointDoF())
-		robot_state.joint_acc = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (robot_state.joint_eff.size() != system_.getJointDoF())
-		robot_state.joint_eff = Eigen::VectorXd::Zero(system_.getJointDoF());
-
-	// Setting the joint states
-	dwl::urdf_model::JointID joints = system_.getJoints();
-	unsigned num_joints = robot_state_msg_.joints.size();
-	robot_state.setJointDoF(num_joints);
-	for (unsigned int i = 0; i < num_joints; i++) {
-		std::string name = robot_state_msg_.joints[i].name;
-
-		dwl::urdf_model::JointID::iterator joint_it = joints.find(name);
-		unsigned int joint_id = joint_it->second;
-
-		robot_state.joint_pos(joint_id) = robot_state_msg_.joints[i].position;
-		robot_state.joint_vel(joint_id) = robot_state_msg_.joints[i].velocity;
-		robot_state.joint_acc(joint_id) = robot_state_msg_.joints[i].acceleration;
-		robot_state.joint_eff(joint_id) = robot_state_msg_.joints[i].effort;
-	}
-
-	// Setting the contact states
-	unsigned int num_contacts = robot_state_msg_.contacts.size();
-	for (unsigned int i = 0; i < num_contacts; i++) {
-		// Getting the contact message
-		dwl_msgs::ContactState contact_msg = robot_state_msg_.contacts[i];
-
-		std::string name = contact_msg.name;
-		dwl::urdf_model::LinkID contact_links = system_.getEndEffectors();
-
-		// Updating the contact position
-		Eigen::VectorXd position(3);
-		position << contact_msg.position.x, contact_msg.position.y, contact_msg.position.z;
-		robot_state.contact_pos[name] = position;
-
-		// Updating the contact velocity
-		Eigen::VectorXd velocity(3);
-		velocity << contact_msg.velocity.x, contact_msg.velocity.y, contact_msg.velocity.z;
-		robot_state.contact_vel[name] = velocity;
-
-		// Updating the contact acceleration
-		Eigen::VectorXd acceleration(3);
-		acceleration << contact_msg.acceleration.x, contact_msg.acceleration.y, contact_msg.acceleration.z;
-		robot_state.contact_acc[name] = acceleration;
-
-		// Updating the contact wrench
-		dwl::rbd::Vector6d effort;
-		effort(dwl::rbd::LX) = contact_msg.wrench.force.x;
-		effort(dwl::rbd::LY) = contact_msg.wrench.force.y;
-		effort(dwl::rbd::LZ) = contact_msg.wrench.force.z;
-		effort(dwl::rbd::AX) = contact_msg.wrench.torque.x;
-		effort(dwl::rbd::AY) = contact_msg.wrench.torque.y;
-		effort(dwl::rbd::AZ) = contact_msg.wrench.torque.z;
-		robot_state.contact_eff[name] = effort;
-	}
+	// Converting the actual robot state message to dwl::WholeBodyState
+	wb_iface_.writeFromMessage(robot_state, robot_state_msg_);
 }
 
 
@@ -258,116 +187,10 @@ void PlannerCommons::updateControllerStateSubscription(dwl::WholeBodyState& desi
 													   dwl::WholeBodyState& actual,
 													   dwl::WholeBodyState& error)
 {
-	// Setting the base states
-	unsigned num_base = controller_state_msg_.actual.base.size();
-	for (unsigned int i = 0; i < num_base; i++) {
-		unsigned base_id = controller_state_msg_.actual.base[i].id;
-
-		// Desired base state
-		desired.base_pos(base_id) = controller_state_msg_.desired.base[i].position;
-		desired.base_vel(base_id) = controller_state_msg_.desired.base[i].velocity;
-		desired.base_acc(base_id) = controller_state_msg_.desired.base[i].acceleration;
-
-		// Actual base state
-		actual.base_pos(base_id) = controller_state_msg_.actual.base[i].position;
-		actual.base_vel(base_id) = controller_state_msg_.actual.base[i].velocity;
-		actual.base_acc(base_id) = controller_state_msg_.actual.base[i].acceleration;
-
-		// Error base state
-		error.base_pos(base_id) = controller_state_msg_.error.base[i].position;
-		error.base_vel(base_id) = controller_state_msg_.error.base[i].velocity;
-		error.base_acc(base_id) = controller_state_msg_.error.base[i].acceleration;
-	}
-
-	// Sanity check: checking the size of the joint states
-	if (desired.joint_pos.size() != system_.getJointDoF())
-		desired.joint_pos = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (desired.joint_vel.size() != system_.getJointDoF())
-		desired.joint_vel = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (desired.joint_acc.size() != system_.getJointDoF())
-		desired.joint_acc = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (desired.joint_eff.size() != system_.getJointDoF())
-		desired.joint_eff = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (actual.joint_pos.size() != system_.getJointDoF())
-		actual.joint_pos = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (actual.joint_vel.size() != system_.getJointDoF())
-		actual.joint_vel = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (actual.joint_acc.size() != system_.getJointDoF())
-		actual.joint_acc = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (actual.joint_eff.size() != system_.getJointDoF())
-		actual.joint_eff = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (error.joint_pos.size() != system_.getJointDoF())
-		error.joint_pos = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (error.joint_vel.size() != system_.getJointDoF())
-		error.joint_vel = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (error.joint_acc.size() != system_.getJointDoF())
-		error.joint_acc = Eigen::VectorXd::Zero(system_.getJointDoF());
-	if (error.joint_eff.size() != system_.getJointDoF())
-		error.joint_eff = Eigen::VectorXd::Zero(system_.getJointDoF());
-
-
-	// Setting the joint states
-	dwl::urdf_model::JointID joints = system_.getJoints();
-	unsigned num_joints = controller_state_msg_.actual.joints.size();
-	for (unsigned int i = 0; i < num_joints; i++) {
-		std::string name = controller_state_msg_.actual.joints[i].name;
-
-		dwl::urdf_model::JointID::iterator joint_it = joints.find(name);
-		unsigned int joint_id = joint_it->second;
-
-		// Desired joint states
-		desired.joint_pos(joint_id) = controller_state_msg_.desired.joints[i].position;
-		desired.joint_vel(joint_id) = controller_state_msg_.desired.joints[i].velocity;
-		desired.joint_acc(joint_id) = controller_state_msg_.desired.joints[i].acceleration;
-		desired.joint_eff(joint_id) = controller_state_msg_.desired.joints[i].effort;
-
-		// Actual joint states
-		actual.joint_pos(joint_id) = controller_state_msg_.actual.joints[i].position;
-		actual.joint_vel(joint_id) = controller_state_msg_.actual.joints[i].velocity;
-		actual.joint_acc(joint_id) = controller_state_msg_.actual.joints[i].acceleration;
-		actual.joint_eff(joint_id) = controller_state_msg_.actual.joints[i].effort;
-
-		// Error joint states
-		error.joint_pos(joint_id) = controller_state_msg_.error.joints[i].position;
-		error.joint_vel(joint_id) = controller_state_msg_.error.joints[i].velocity;
-		error.joint_acc(joint_id) = controller_state_msg_.error.joints[i].acceleration;
-		error.joint_eff(joint_id) = controller_state_msg_.error.joints[i].effort;
-	}
-/* TODO source node may not publish these states
-	// Setting the contact states
-	unsigned int num_contacts = controller_state_msg_.actual.contacts.size();
-	for (unsigned int i = 0; i < num_contacts; i++) {
-		// Getting the contact message
-		dwl_msgs::ContactState contact_msg = robot_state_msg_.contacts[i];
-
-		std::string name = contact_msg.name;
-		dwl::urdf_model::LinkID contact_links = system_.getEndEffectors();
-
-		// Updating the contact position
-		Eigen::VectorXd position(3);
-		position << contact_msg.position.x, contact_msg.position.y, contact_msg.position.z;
-		robot_state.contact_pos[name] = position;
-
-		// Updating the contact velocity
-		Eigen::VectorXd velocity(3);
-		velocity << contact_msg.velocity.x, contact_msg.velocity.y, contact_msg.velocity.z;
-		robot_state.contact_vel[name] = velocity;
-
-		// Updating the contact acceleration
-		Eigen::VectorXd acceleration(3);
-		acceleration << contact_msg.acceleration.x, contact_msg.acceleration.y, contact_msg.acceleration.z;
-		robot_state.contact_acc[name] = acceleration;
-
-		// Updating the contact wrench
-		dwl::rbd::Vector6d effort;
-		effort(dwl::rbd::LX) = contact_msg.wrench.force.x;
-		effort(dwl::rbd::LY) = contact_msg.wrench.force.y;
-		effort(dwl::rbd::LZ) = contact_msg.wrench.force.z;
-		effort(dwl::rbd::AX) = contact_msg.wrench.torque.x;
-		effort(dwl::rbd::AY) = contact_msg.wrench.torque.y;
-		effort(dwl::rbd::AZ) = contact_msg.wrench.torque.z;
-		robot_state.contact_eff[name] = effort;
-	}*/
+	// Converting the desired, actual and error whole-body states
+	wb_iface_.writeFromMessage(desired, controller_state_msg_.desired);
+	wb_iface_.writeFromMessage(actual, controller_state_msg_.actual);
+	wb_iface_.writeFromMessage(error, controller_state_msg_.error);
 }
 
 

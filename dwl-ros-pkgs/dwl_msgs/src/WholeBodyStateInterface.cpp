@@ -193,6 +193,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 	}
 
 	// Writing the contact states
+	Eigen::Vector3d contact_state;
 	unsigned int num_contacts = msg.contacts.size();
 	for (unsigned int i = 0; i < num_contacts; i++) {
 		// Getting the contact message
@@ -202,25 +203,22 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 		std::string name = contact_msg.name;
 
 		// Updating the contact position
-		Eigen::VectorXd position(3);
-		position << contact_msg.position.x,
-					contact_msg.position.y,
-					contact_msg.position.z;
-		state.contact_pos[name] = position;
+		contact_state(dwl::rbd::X) = contact_msg.position.x;
+		contact_state(dwl::rbd::Y) = contact_msg.position.y;
+		contact_state(dwl::rbd::Z) = contact_msg.position.z;
+		state.contact_pos[name] = contact_state;
 
 		// Updating the contact velocity
-		Eigen::VectorXd velocity(3);
-		velocity << contact_msg.velocity.x,
-					contact_msg.velocity.y,
-					contact_msg.velocity.z;
-		state.contact_vel[name] = velocity;
+		contact_state(dwl::rbd::X) = contact_msg.velocity.x;
+		contact_state(dwl::rbd::Y) = contact_msg.velocity.y;
+		contact_state(dwl::rbd::Z) = contact_msg.velocity.z;
+		state.contact_vel[name] = contact_state;
 
 		// Updating the contact acceleration
-		Eigen::VectorXd acceleration(3);
-		acceleration << contact_msg.acceleration.x,
-						contact_msg.acceleration.y,
-						contact_msg.acceleration.z;
-		state.contact_acc[name] = acceleration;
+		contact_state(dwl::rbd::X) = contact_msg.acceleration.x;
+		contact_state(dwl::rbd::Y) = contact_msg.acceleration.y;
+		contact_state(dwl::rbd::Z) = contact_msg.acceleration.z;
+		state.contact_acc[name] = contact_state;
 
 		// Updating the contact wrench
 		dwl::rbd::Vector6d effort;
