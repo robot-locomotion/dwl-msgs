@@ -24,6 +24,7 @@ void PlannerCommons::initMotionPlanStatePublisher(ros::NodeHandle node_pub,
 {
 	// Setting the floating-base system info
 	system_ = system;
+	wb_iface_.reset(system_);
 
 	// Initializing the publisher
 	motion_plan_pub_ =
@@ -57,6 +58,7 @@ void PlannerCommons::initRobotStateSubscriber(ros::NodeHandle node,
 {
 	// Setting the floating-base system info
 	system_ = system;
+	wb_iface_.reset(system_);
 
 	robot_state_sub_ = node.subscribe<dwl_msgs::WholeBodyState>(node.getNamespace() + "/robot_states", 1,
 			&PlannerCommons::setRobotStateCB, this, ros::TransportHints().tcpNoDelay());
@@ -68,6 +70,7 @@ void PlannerCommons::initControllertStateSubscriber(ros::NodeHandle node,
 {
 	// Setting the floating-base system info
 	system_ = system;
+	wb_iface_.reset(system_);
 
 	controller_state_sub_ = node.subscribe<dwl_msgs::WholeBodyController>(node.getNamespace() + "/state", 1,
 			&PlannerCommons::setControllerStateCB, this, ros::TransportHints().tcpNoDelay());
@@ -97,13 +100,10 @@ void PlannerCommons::publishMotionPlan(const dwl::WholeBodyState& current_state,
 		motion_plan_msg_.header.frame_id = world_frame_id_;
 
 		// Filling the current state
-		writeWholeBodyStateMessage(motion_plan_msg_.actual,
-								   current_state);
+		wb_iface_.writeToMessage(motion_plan_msg_.actual, current_state);
 
 		// Filling the trajectory
-		motion_plan_msg_.trajectory.resize(trajectory.size());
-		for (unsigned int i = 0; i < trajectory.size(); i++)
-			writeWholeBodyStateMessage(motion_plan_msg_.trajectory[i], trajectory[i]);
+		wb_iface_.writeToMessage(motion_plan_msg_, trajectory);
 
 		// Publishing the motion plan
 		motion_plan_pub_.publish(motion_plan_msg_);
@@ -145,112 +145,6 @@ void PlannerCommons::publishReducedPlan(const dwl::ReducedBodyState& current_sta
 
 		// Publishing the motion plan
 		reduced_plan_pub_.publish(reduced_plan_msg_);
-	}
-}
-
-
-void PlannerCommons::writeWholeBodyStateMessage(dwl_msgs::WholeBodyState& msg,
-		 	 	 	 	 	 	 	 	 	 	const dwl::WholeBodyState& state)
-{
-	// Filling the time information
-	msg.time = state.time;
-
-	// Filling the base state
-	if (system_.isFullyFloatingBase())
-		msg.base.resize(6);
-	else
-		msg.base.resize(system_.getFloatingBaseDoF());
-	unsigned int counter = 0;
-	for (unsigned int base_idx = 0; base_idx < 6; base_idx++) {
-		dwl::rbd::Coords6d base_coord = dwl::rbd::Coords6d(base_idx);
-		dwl::model::FloatingBaseJoint base_joint = system_.getFloatingBaseJoint(base_coord);
-
-		if (base_joint.active) {
-			msg.base[counter].id = base_idx;
-			msg.base[counter].name = base_joint.name;
-
-			msg.base[counter].position = state.base_pos(base_idx);
-			msg.base[counter].velocity = state.base_vel(base_idx);
-			msg.base[counter].acceleration = state.base_acc(base_idx);
-
-			counter++;
-		}
-	}
-
-	// Filling the joint state if there is information
-	if (state.joint_pos.size() == system_.getJointDoF()) { //safety check
-		msg.joints.resize(system_.getJointDoF());
-		for (dwl::urdf_model::JointID::const_iterator jnt_it = system_.getJoints().begin();
-				jnt_it != system_.getJoints().end(); jnt_it++) {
-			std::string name = jnt_it->first;
-			unsigned int id = jnt_it->second;
-
-			msg.joints[id].name = name;
-			msg.joints[id].position = state.joint_pos(id);
-			msg.joints[id].velocity = state.joint_vel(id);
-			msg.joints[id].acceleration = state.joint_acc(id);
-			msg.joints[id].effort = state.joint_eff(id);
-		}
-	}
-
-	// Filling the contact state if there is information
-	// Note that planners can(not) generates contact information, at the same time, controllers
-	// could(not) used it. If the controller need a missing contact information, then it could
-	// computed from the joint trajectory
-	unsigned int contact_counter = 0;
-	msg.contacts.resize(state.contact_pos.size());
-	dwl::urdf_model::LinkID contact_links = system_.getEndEffectors();
-	for (dwl::urdf_model::LinkID::const_iterator contact_it = contact_links.begin();
-			contact_it != contact_links.end(); contact_it++) {
-		std::string name = contact_it->first;
-
-		// Defining the contact state vectors
-		Eigen::Vector3d position, velocity, acceleration;
-		dwl::rbd::Vector6d effort;
-
-		// Defining the contact iterators
-		dwl::rbd::BodyVectorXd::const_iterator pos_it, vel_it, acc_it;
-		dwl::rbd::BodyVector6d::const_iterator eff_it;
-
-		// Filling the contact state
-		pos_it = state.contact_pos.find(name);
-		vel_it = state.contact_vel.find(name);
-		acc_it = state.contact_acc.find(name);
-		eff_it = state.contact_eff.find(name);
-		if (pos_it != state.contact_pos.end()) {
-			// Filling the name of the contact
-			msg.contacts[contact_counter].name = name;
-
-			position = pos_it->second.tail(3);
-			msg.contacts[contact_counter].position.x = position(dwl::rbd::X);
-			msg.contacts[contact_counter].position.y = position(dwl::rbd::Y);
-			msg.contacts[contact_counter].position.z = position(dwl::rbd::Z);
-
-			if (vel_it != state.contact_vel.end()) {
-				velocity = vel_it->second.tail(3);
-				msg.contacts[contact_counter].velocity.x = velocity(dwl::rbd::X);
-				msg.contacts[contact_counter].velocity.y = velocity(dwl::rbd::Y);
-				msg.contacts[contact_counter].velocity.z = velocity(dwl::rbd::Z);
-			}
-			if (acc_it != state.contact_acc.end()) {
-				acceleration = acc_it->second.tail(3);
-				msg.contacts[contact_counter].acceleration.x = acceleration(dwl::rbd::X);
-				msg.contacts[contact_counter].acceleration.y = acceleration(dwl::rbd::Y);
-				msg.contacts[contact_counter].acceleration.z = acceleration(dwl::rbd::Z);
-			}
-			if (eff_it != state.contact_eff.end()) {
-				effort = eff_it->second;
-				msg.contacts[contact_counter].wrench.force.x = effort(dwl::rbd::LX);
-				msg.contacts[contact_counter].wrench.force.y = effort(dwl::rbd::LY);
-				msg.contacts[contact_counter].wrench.force.z = effort(dwl::rbd::LZ);
-				msg.contacts[contact_counter].wrench.torque.x = effort(dwl::rbd::AX);
-				msg.contacts[contact_counter].wrench.torque.y = effort(dwl::rbd::AY);
-				msg.contacts[contact_counter].wrench.torque.z = effort(dwl::rbd::AZ);
-			}
-
-			// Incrementing the contact counter
-			contact_counter++;
-		}
 	}
 }
 

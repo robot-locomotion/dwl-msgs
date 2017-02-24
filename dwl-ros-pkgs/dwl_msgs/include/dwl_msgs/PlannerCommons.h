@@ -4,13 +4,10 @@
 #include <ros/ros.h>
 #include <realtime_tools/realtime_buffer.h>
 
-#include <dwl/model/FloatingBaseSystem.h>
+#include <dwl_msgs/WholeBodyStateInterface.h>
 #include <dwl/locomotion/WholeBodyTrajectoryOptimization.h>
-#include <dwl/utils/RigidBodyDynamics.h>
 
 // Messages headers
-#include <dwl_msgs/WholeBodyState.h>
-#include <dwl_msgs/WholeBodyTrajectory.h>
 #include <dwl_msgs/ReducedBodyState.h>
 #include <dwl_msgs/ReducedBodyTrajectory.h>
 #include <dwl_msgs/WholeBodyController.h>
@@ -120,13 +117,7 @@ class PlannerCommons
 
 
 	private:
-		/**
-		 * @brief Writes the whole-body state message from a dwl::WholeBodyState
-		 * @param dwl_msgs::WholeBodyState& Whole-body state message
-		 * @param const dwl::WholeBodyState& Whole-body state
-		 */
-		void writeWholeBodyStateMessage(dwl_msgs::WholeBodyState& msg,
-	 	 	 	 	 					const dwl::WholeBodyState& state);
+		dwl_msgs::WholeBodyStateInterface wb_iface_;
 
 		/**
 		 * @brief Writes the reduced-body state message from dwl::ReducedBodyState

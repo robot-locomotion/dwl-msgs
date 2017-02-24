@@ -10,7 +10,7 @@ WholeBodyStateInterface::WholeBodyStateInterface() : is_system_(false)
 }
 
 
-WholeBodyStateInterface::WholeBodyStateInterface(dwl::model::FloatingBaseSystem& system) : is_system_(true)
+WholeBodyStateInterface::WholeBodyStateInterface(const dwl::model::FloatingBaseSystem& system) : is_system_(true)
 {
 	fbs_ = system;
 }
@@ -139,6 +139,17 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 }
 
 
+void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyTrajectory& msg,
+											 const dwl::WholeBodyTrajectory& traj)
+{
+	// Filling the trajectory
+	unsigned int num_points = traj.size();
+	msg.trajectory.resize(num_points);
+	for (unsigned int i = 0; i < num_points; i++)
+		writeToMessage(msg.trajectory[i], traj[i]);
+}
+
+
 void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 					  	  	  	  	  	  	   const dwl_msgs::WholeBodyState& msg)
 {
@@ -221,6 +232,17 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 		effort(dwl::rbd::LZ) = contact_msg.wrench.force.z;
 		state.contact_eff[name] = effort;
 	}
+}
+
+
+void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyTrajectory& traj,
+											   const dwl_msgs::WholeBodyTrajectory& msg)
+{
+	// Filling the trajectory
+	unsigned int num_points = msg.trajectory.size();
+	traj.resize(num_points);
+	for (unsigned int i = 0; i < num_points; i++)
+		writeFromMessage(traj[i], msg.trajectory[i]);
 }
 
 } //@namespace dwl_msgs
