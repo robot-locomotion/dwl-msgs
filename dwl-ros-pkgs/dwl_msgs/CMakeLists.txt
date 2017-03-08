@@ -45,6 +45,11 @@ catkin_package(
   DEPENDS  system_lib)
 
 
+# Setting flags for optimization
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -march=native -mno-avx -mtune=native -D EIGEN_NO_DEBUG")
+
+
 include_directories(include)
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(${dwl_INCLUDE_DIRS})
