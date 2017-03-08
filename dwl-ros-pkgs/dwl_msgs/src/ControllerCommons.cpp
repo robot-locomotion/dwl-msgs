@@ -4,7 +4,7 @@
 namespace dwl_msgs
 {
 
-ControllerCommons::ControllerCommons() : new_plan_(false), init_base_state_(false),
+ControllerCommons::ControllerCommons() : init_base_state_(false), new_plan_(false),
 		num_traj_points_(0), trajectory_counter_(0), controller_publish_rate_(250),
 		robot_publish_rate_(250), odom_publish_rate_(250), imu_publish_rate_(250),
 		init_controller_state_pub_(false), init_robot_state_pub_(false),
