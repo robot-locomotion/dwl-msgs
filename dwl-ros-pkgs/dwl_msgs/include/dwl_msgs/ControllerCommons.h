@@ -13,7 +13,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <tf2_msgs/TFMessage.h>
-
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 namespace dwl_msgs
 {
@@ -198,6 +198,9 @@ class ControllerCommons
 
 		/** @brief State estimation publisher */
 		boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > base_state_pub_;
+
+        /** @brief Pose with covariance publisher */
+        boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::PoseWithCovarianceStamped> > pose_covariance_pub_;
 
 		/** @brief Imu state publisher */
 		boost::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_state_pub_;

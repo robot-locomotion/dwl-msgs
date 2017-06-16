@@ -103,6 +103,8 @@ void ControllerCommons::initStateEstimationPublisher(ros::NodeHandle node)
 	ros::NodeHandle nh; //Nodehandle without prefix
 	base_state_pub_.reset(new
 			realtime_tools::RealtimePublisher<nav_msgs::Odometry> (node, "odom", 1));
+    pose_covariance_pub_.reset(new
+            realtime_tools::RealtimePublisher<geometry_msgs::PoseWithCovarianceStamped> (node, "pose", 1));
 	tf_pub_.reset(new
 			realtime_tools::RealtimePublisher<tf2_msgs::TFMessage> (nh, "tf", 100));
 
@@ -255,6 +257,23 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 			base_state_pub_->msg_.twist.twist.angular.z = base_vel(dwl::rbd::AZ);
 			base_state_pub_->unlockAndPublish();
 		}
+
+        // try to publish
+        if (pose_covariance_pub_->trylock()) {
+            // we're actually publishing, so increment time
+            last_odom_publish_time_ += ros::Duration(1.0 / odom_publish_rate_);
+            pose_covariance_pub_->msg_.header.stamp = time;
+            pose_covariance_pub_->msg_.header.frame_id = "world";
+
+            pose_covariance_pub_->msg_.pose.pose.position.x = base_pos(dwl::rbd::LX);
+            pose_covariance_pub_->msg_.pose.pose.position.y = base_pos(dwl::rbd::LY);
+            pose_covariance_pub_->msg_.pose.pose.position.z = base_pos(dwl::rbd::LZ);
+            pose_covariance_pub_->msg_.pose.pose.orientation.x = base_quat.x();
+            pose_covariance_pub_->msg_.pose.pose.orientation.y = base_quat.y();
+            pose_covariance_pub_->msg_.pose.pose.orientation.z = base_quat.z();
+            pose_covariance_pub_->msg_.pose.pose.orientation.w = base_quat.w();
+            pose_covariance_pub_->unlockAndPublish();
+        }
 
 		// TF message
 		geometry_msgs::TransformStamped tf_msg;
