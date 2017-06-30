@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(dwl REQUIRED)
 
+catkin_python_setup()
 
 add_message_files(
    FILES

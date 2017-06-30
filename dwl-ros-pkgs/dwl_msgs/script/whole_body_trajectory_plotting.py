@@ -1,7 +1,4 @@
 #!/usr/bin/python
-import rosbag
-import argparse
-from dwl_msgs.msg import WholeBodyState
 import numpy as np
 
 from matplotlib.patches import Rectangle
@@ -10,104 +7,10 @@ from matplotlib import rc
 rc('font',**{'family':'serif','serif':['Cardo']})
 rc('text', usetex=True)
 
-def extract(bagfile, whole_body_state_topic):
-    n = 0
-    state_list = list()
-    initial_time = 0
-    with rosbag.Bag(bagfile, 'r') as bag:
-        initial_time = 0.
-        duration = 0.
-        starting_time = bag.get_start_time() + initial_time
-        if (duration == 0.0):
-            ending_time = bag.get_end_time()
-            duration = ending_time - starting_time
-        else:
-            ending_time = starting_time + duration
-        
-        # Recording the whole-body state trajectory
-        time_list = list()
-        base_pos_list = list()
-        base_vel_list = list()
-        base_acc_list = list()
-        joint_pos_list = list()
-        joint_vel_list = list()
-        joint_acc_list = list()
-        contact_list = list()
-        for (topic, msg, ts) in bag.read_messages(topics=str(whole_body_state_topic)):
-            # Recording the data in the desired time range
-            if (ts.to_sec() >= starting_time and ts.to_sec() <= ending_time):
-                # Setting the floating-base system DoF
-                num_base_joints = len(msg.actual.base)
-                num_joints = len(msg.actual.joints)
-                num_contacts = len(msg.actual.contacts)
-            
-                # Getting the current time
-                if (n == 0):
-                    initial_time = ts.to_sec()
-                time = ts.to_sec() - initial_time
-            
-                # Defining the state lists
-                base_pos = list()
-                base_vel = list()
-                base_acc = list()
-                joint_pos = list()
-                joint_vel = list()
-                joint_acc = list()
-                contact_state = list()
+import roslib; roslib.load_manifest('dwl_msgs')
+import argparse
+from dwl_msgs import BagParser as bag_parser
 
-                # Getting the base states
-                for i in range(num_base_joints):
-                    base_pos.append(msg.actual.base[i].position)
-                    base_pos.append(msg.desired.base[i].position)
-                    base_vel.append(msg.actual.base[i].velocity)
-                    base_vel.append(msg.desired.base[i].velocity)
-                    base_acc.append(msg.actual.base[i].acceleration)
-                    base_acc.append(msg.desired.base[i].acceleration)
-                
-                # Getting the joint states
-                for i in range(num_joints):
-                    joint_pos.append(msg.actual.joints[i].position)
-                    joint_pos.append(msg.desired.joints[i].position)
-                    joint_vel.append(msg.actual.joints[i].velocity)
-                    joint_vel.append(msg.desired.joints[i].velocity)
-                    joint_acc.append(msg.actual.joints[i].acceleration)
-                    joint_acc.append(msg.desired.joints[i].acceleration)
-                                        
-                # Getting the contact states
-                for i in range(num_contacts):
-                    contact_state.append(msg.actual.contacts[i].position.x)
-                    contact_state.append(msg.actual.contacts[i].position.y)
-                    contact_state.append(msg.actual.contacts[i].position.z)
-                    contact_state.append(msg.desired.contacts[i].position.x)
-                    contact_state.append(msg.desired.contacts[i].position.y)
-                    contact_state.append(msg.desired.contacts[i].position.z)
-
-                base_pos_list.append(base_pos)
-                base_vel_list.append(base_vel)
-                base_acc_list.append(base_acc)
-                joint_pos_list.append(joint_pos)
-                joint_vel_list.append(joint_vel)
-                joint_acc_list.append(joint_acc)
-                contact_list.append(contact_state)
-
-                n += 1
-    print('Loaded ' + str(n) + ' whole body states from bagfile.')
-    
-    # Getting the time info
-    for i in range(n):
-        time_list.append(i * duration/n)
-    
-    
-    time_vec = np.array(time_list)
-    base_pos_vec = np.array(base_pos_list)
-    base_vel_vec = np.array(base_vel_list)
-    base_acc_vec = np.array(base_acc_list)
-    joint_pos_vec = np.array(joint_pos_list)
-    joint_vel_vec = np.array(joint_vel_list)
-    joint_acc_vec = np.array(joint_acc_list)
-    contact_vec = np.array(contact_list)
-
-    return time_vec, base_pos_vec, base_vel_vec, base_acc_vec, joint_pos_vec, joint_vel_vec, joint_acc_vec, contact_vec
 
     
     
@@ -118,9 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('bag', help='Bagfile')
     parser.add_argument('topic', help='Topic')
     args = parser.parse_args()
-        
-    print('Extract pose from bag '+args.bag+' in topic ' + args.topic)
-    time, base_pos, base_vel, base_acc, joint_pos, joint_vel, joint_acc, contact_pos = extract(args.bag, args.topic)
+    
+    time, base_pos, base_vel, base_acc, joint_pos, joint_vel, joint_acc, contact_pos = bag_parser.extractWholeBodyControllerState(args.bag, args.topic)
 
     # Plotting the base states
     num_base_joints = len(base_pos[0]) / 2
@@ -133,7 +35,7 @@ if __name__ == '__main__':
         plt.title('Base Position', fontsize=18, fontweight='bold')
         plt.ylabel('$z$ $[m]$', {'color':'k', 'fontsize':18})
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':18})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -148,7 +50,7 @@ if __name__ == '__main__':
         ax.plot(time,base_vel[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Base Velocity')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -163,7 +65,7 @@ if __name__ == '__main__':
         ax.plot(time,base_acc[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Base Acceleration')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -180,7 +82,7 @@ if __name__ == '__main__':
         ax.plot(time,joint_pos[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Joint position')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -195,7 +97,7 @@ if __name__ == '__main__':
         ax.plot(time,joint_vel[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Joint Velocity')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -210,7 +112,7 @@ if __name__ == '__main__':
         ax.plot(time,joint_acc[:,2*i], 'r', linewidth=2.5)
         plt.ylabel('Joint Acceleration')
         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         ax.grid(True)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -240,7 +142,7 @@ if __name__ == '__main__':
 
         plt.ylabel('$z$ $[m]$', {'color':'k', 'fontsize':16})
         plt.xlabel('$x$ $[m]$', {'color':'k', 'fontsize':16})
-        plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+        plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
         plt.grid(True)
         plt.gca().invert_xaxis()
         ax.spines['right'].set_visible(False)
@@ -260,7 +162,7 @@ if __name__ == '__main__':
 #         plt.plot(time,joint_vel[:,2*i], 'r', linewidth=2.5)
 #         plt.ylabel('Joint velocity')
 #         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-#         plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+#         plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
 #         fig.tight_layout()
 #         fig.savefig('joint_vel_' + str(i) + '.png')
 #         
@@ -270,6 +172,6 @@ if __name__ == '__main__':
 #         plt.plot(time,joint_acc[:,2*i], 'r', linewidth=2.5)
 #         plt.ylabel('Joint acceleration')
 #         plt.xlabel('$t$ $[s]$', {'color':'k', 'fontsize':16})
-#         plt.legend((r'$Planned$', r'$Executed$'), shadow = True, loc = (0.8, 0))
+#         plt.legend((r'$Desired$', r'$Executed$'), shadow = True, loc = (0.8, 0))
 #         fig.tight_layout()
 #         fig.savefig('joint_acc_' + str(i) + '.png')
