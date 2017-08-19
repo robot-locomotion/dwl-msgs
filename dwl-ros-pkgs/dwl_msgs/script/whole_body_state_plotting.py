@@ -16,31 +16,43 @@ if __name__ == '__main__':
     parser.add_argument('topic', help='Topic')
     args = parser.parse_args()
     
+    # Extrating the whole-body trajectory
     ws_vec = bag_parser.extractWholeBodyState(args.bag, args.topic)
 
-    time = []
-    base_pos_AX = []
-    base_pos_AY = []
-    base_pos_AZ = []
-    base_pos_LX = []
-    base_pos_LY = []
-    base_pos_LZ = []
-    for ws in ws_vec:
-        time.append(ws.getTime());
-        base_pos_AX.append(ws.getBaseRPY_W()[dwl.X]);
-        base_pos_AY.append(ws.getBaseRPY_W()[dwl.Y]);
-        base_pos_AZ.append(ws.getBaseRPY_W()[dwl.Z]);
-        base_pos_LX.append(ws.getBasePosition_W()[dwl.X]);
-        base_pos_LY.append(ws.getBasePosition_W()[dwl.Y]);
-        base_pos_LZ.append(ws.getBasePosition_W()[dwl.Z]);
-
+    # Time vector
+    time = [[k.getTime()] for k in ws_vec]
+    
+    # Base states
+    base_RPY = [[k.getBaseRPY_W()[i] for k in ws_vec] for i in range(0,3)]
+    base_pos = [[k.getBasePosition_W()[i] for k in ws_vec] for i in range(0,3)]
+    base_omega = [[k.getBaseAngularVelocity_W()[i] for k in ws_vec] for i in range(0,3)]
+    base_vel = [[k.getBaseVelocity_W()[i] for k in ws_vec] for i in range(0,3)]
+    base_omaged = [[k.getBaseAngularAcceleration_W()[i] for k in ws_vec] for i in range(0,3)]
+    base_acc = [[k.getBaseAcceleration_W()[i] for k in ws_vec] for i in range(0,3)]
+    
+    # Joint states
+    num_joints = ws_vec[0].getJointDoF()
+    joint_pos = [[k.getJointPosition()[i] for k in ws_vec] for i in range(0,num_joints)]
+    joint_vel = [[k.getJointVelocity()[i] for k in ws_vec] for i in range(0,num_joints)]
+    joint_acc = [[k.getJointAcceleration()[i] for k in ws_vec] for i in range(0,num_joints)]
+    joint_eff = [[k.getJointEffort()[i] for k in ws_vec] for i in range(0,num_joints)]
+    
+    # Contact states
+    contact_names = [c for c in ws_vec[0].getContactPosition_B()]
+    contact_pos = dict([]);  contact_vel = dict([]);  contact_acc = dict([])
+    contact_wrc = dict([])
+    for c in contact_names:
+        contact_pos[c] = [[k.getContactPosition_B(c)[i] for k in ws_vec] for i in range(0,3)]
+        contact_vel[c] = [[k.getContactVelocity_B(c)[i] for k in ws_vec] for i in range(0,3)]
+        contact_acc[c] = [[k.getContactAcceleration_B(c)[i] for k in ws_vec] for i in range(0,3)]
+        contact_wrc[c] = [[k.getContactAcceleration_B(c)[i] for k in ws_vec] for i in range(0,6)]
 
     #fig, ax = plt.subplots()
     fig = plt.figure(1)
     ax = fig.add_subplot(111)
-#   ax.plot(time,base_pos[:,2*i+1], 'k', linewidth=2.5)
-    #ax.plot(np.array(time_vec),np.array(base_pos_x), 'r', linewidth=2.5)
-    ax.plot(time, base_pos_LX, 'r', linewidth=2.5)
+    ax.plot(time, base_pos[dwl.X], 'r', linewidth=2.5)
+    #ax.plot(time, joint_pos[0], 'r', linewidth=2.5)
+    #ax.plot(time, contact_pos['lh_foot'][dwl.X], 'r', linewidth=2.5)
     plt.show()
 
     # Plotting the base states
