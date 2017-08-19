@@ -45,7 +45,7 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 	else
 		msg.base.resize(fbs_.getFloatingBaseDoF());
 	unsigned int counter = 0;
-	for (unsigned int base_idx = 0; base_idx < 6; base_idx++) {
+	for (unsigned int base_idx = 0; base_idx < 6; ++base_idx) {
 		dwl::rbd::Coords6d base_coord = dwl::rbd::Coords6d(base_idx);
 		dwl::model::FloatingBaseJoint base_joint = fbs_.getFloatingBaseJoint(base_coord);
 
@@ -65,7 +65,7 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 	if (state.joint_pos.size() == fbs_.getJointDoF()) { //safety check
 		msg.joints.resize(fbs_.getJointDoF());
 		for (dwl::urdf_model::JointID::const_iterator jnt_it = fbs_.getJoints().begin();
-				jnt_it != fbs_.getJoints().end(); jnt_it++) {
+				jnt_it != fbs_.getJoints().end(); ++jnt_it) {
 			std::string name = jnt_it->first;
 			unsigned int id = jnt_it->second;
 
@@ -85,7 +85,7 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 	msg.contacts.resize(state.contact_pos.size());
 	dwl::urdf_model::LinkID contact_links = fbs_.getEndEffectors();
 	for (dwl::urdf_model::LinkID::const_iterator contact_it = contact_links.begin();
-			contact_it != contact_links.end(); contact_it++) {
+			contact_it != contact_links.end(); ++contact_it) {
 		std::string name = contact_it->first;
 
 		// Defining the contact state vectors
@@ -145,7 +145,7 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyTrajectory& msg,
 	// Filling the trajectory
 	unsigned int num_points = traj.size();
 	msg.trajectory.resize(num_points);
-	for (unsigned int i = 0; i < num_points; i++)
+	for (unsigned int i = 0; i < num_points; ++i)
 		writeToMessage(msg.trajectory[i], traj[i]);
 }
 
@@ -162,7 +162,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 
 	// Writing the base states
 	unsigned num_base = msg.base.size();
-	for (unsigned int i = 0; i < num_base; i++) {
+	for (unsigned int i = 0; i < num_base; ++i) {
 		unsigned base_id = msg.base[i].id;
 
 		state.base_pos(base_id) = msg.base[i].position;
@@ -183,7 +183,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 	// Writing the joint states
 	dwl::urdf_model::JointID joints = fbs_.getJoints();
 	unsigned num_joints = msg.joints.size();
-	for (unsigned int i = 0; i < num_joints; i++) {
+	for (unsigned int i = 0; i < num_joints; ++i) {
 		std::string name = msg.joints[i].name;
 
 		dwl::urdf_model::JointID::iterator joint_it = joints.find(name);
@@ -198,7 +198,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 	// Writing the contact states
 	Eigen::Vector3d contact_state;
 	unsigned int num_contacts = msg.contacts.size();
-	for (unsigned int i = 0; i < num_contacts; i++) {
+	for (unsigned int i = 0; i < num_contacts; ++i) {
 		// Getting the contact message
 		dwl_msgs::ContactState contact_msg = msg.contacts[i];
 
@@ -242,7 +242,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyTrajectory& traj,
 	// Filling the trajectory
 	unsigned int num_points = msg.trajectory.size();
 	traj.resize(num_points);
-	for (unsigned int i = 0; i < num_points; i++)
+	for (unsigned int i = 0; i < num_points; ++i)
 		writeFromMessage(traj[i], msg.trajectory[i]);
 }
 
