@@ -2,7 +2,8 @@
 import roslib; roslib.load_manifest('dwl_msgs')
 
 import dwl
-from dwl_msgs.msg import WholeBodyState, WholeBodyStateInterface
+from dwl_msgs.msg import WholeBodyState
+from dwl_msgs import WholeBodyStateInterface
 import numpy as np
 import rosbag
 
