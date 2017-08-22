@@ -9,18 +9,14 @@ import rosbag
 
 
 
-def extractWholeBodyState(bagfile, topic):
+def extractWholeBodyState(bagfile, topic, initial_time = 0., duration = 0.):
     print('Extracting the WholeBodyState message in topic' + topic +
           ' from rosbag ' + bagfile)
 
     n = 0
-    state_list = list()
-    initial_time = 0
     with rosbag.Bag(bagfile, 'r') as bag:
-        initial_time = 0.
-        duration = 0.
         starting_time = bag.get_start_time() + initial_time
-        if (duration == 0.0):
+        if (duration == 0.):
             ending_time = bag.get_end_time()
             duration = ending_time - starting_time
         else:
@@ -123,7 +119,6 @@ def extractWholeBodyControllerState(bagfile, topic):
           ' from rosbag ' + bagfile)
 
     n = 0
-    state_list = list()
     initial_time = 0
     with rosbag.Bag(bagfile, 'r') as bag:
         initial_time = 0.
@@ -138,7 +133,7 @@ def extractWholeBodyControllerState(bagfile, topic):
         # Recording the whole-body state trajectory
         ws_actual_list = []
         ws_desired_list = []
-        ws_errore_list = []
+        ws_error_list = []
         for (topic, msg, ts) in bag.read_messages(topics=str(topic)):
             # Recording the data in the desired time range
             if (ts.to_sec() >= starting_time and ts.to_sec() <= ending_time):
