@@ -8,8 +8,7 @@ import numpy as np
 
 class WholeBodyStateInterface():
     def __init__(self):
-        self.is_system_ = false
-
+        return
     
     def writeFromMessage(self, state, msg):
         # Setting the floating-base system DoF
@@ -20,7 +19,7 @@ class WholeBodyStateInterface():
         state.setJointDoF(num_joints)
 
         # Getting the time
-        state.setTime(time)
+        state.setTime(msg.time)
 
         # Getting the base states
         base_pos = np.array([msg.base[dwl.LX].position,
