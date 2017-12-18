@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(dwl_msgs)
 
+message("Dynamic Whole-Body Locomotion (DWL) ROS messages")
+message("Copyright (C) 2014-2018 Carlos Mastalli, <carlos.mastalli@laas.fr>")
+message("All rights reserved.")
+message("Released under the BSD 3-Clause License.")
+
+
 
 find_package(catkin REQUIRED COMPONENTS
   dwl
