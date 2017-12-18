@@ -16,7 +16,9 @@ The Dynamic Whole Body Locomotion library (DWL) describes a set of core function
 
 The DWL's ROS messages are a set of message description which are compatible with DWL standards. This allows us to define the standarized messages of DWL in ROS.
 
-[![ScreenShot](https://imgur.com/Ox7pa0e)](https://www.youtube.com/watch?v=ENHvCGrnr2g)
+[![ScreenShot](https://imgur.com/Ox7pa0e.gif)](https://www.youtube.com/watch?v=ENHvCGrnr2g)
+
+The source code is released under a [BSD 3-Clause license](LICENSE).
 
 
 Software Overview
