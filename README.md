@@ -35,5 +35,6 @@ Building
 Before building the dwl_msgs you need to install the dependencies of DWL. Additionally you have to build dwl with catkin.
 
 The dwl_msgs is a catkin project which can be built as:
+
 	cd your_ros_ws/
 	catkin_make
