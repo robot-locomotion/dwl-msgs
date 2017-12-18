@@ -1,4 +1,3 @@
-==============================================
 The DWL's ROS messages
 ==============================================
 
@@ -6,6 +5,7 @@ Table of Contents
 ==============================================
 1. [Introduction](#introduction)
 2. [Software Overview](#software-overview)
+3. [Building](#building)
 
 
 Introduction
@@ -16,7 +16,7 @@ The Dynamic Whole Body Locomotion library (DWL) describes a set of core function
 
 The DWL's ROS messages are a set of message description which are compatible with DWL standards. This allows us to define the standarized messages of DWL in ROS.
 
-[![ScreenShot](https://j.gifs.com/zJEDWD.gif)](https://www.youtube.com/watch?v=ENHvCGrnr2g)
+[![ScreenShot](https://imgur.com/Ox7pa0e)](https://www.youtube.com/watch?v=ENHvCGrnr2g)
 
 
 Software Overview
@@ -28,3 +28,10 @@ The dwl-lcmtypes is a ROS packages with the following required dependencies:
 * [DWL](https://github.com/robot-locomotion/dwl)
 
 
+Building
+===============================================
+Before building the dwl_msgs you need to install the dependencies of DWL. Additionally you have to build dwl with catkin.
+
+The dwl_msgs is a catkin project which can be built as:
+	cd your_ros_ws/
+	catkin_make
