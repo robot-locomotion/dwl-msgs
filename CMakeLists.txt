@@ -17,8 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
   message_generation)
 
-find_package(dwl REQUIRED)
-
 catkin_python_setup()
 
 add_message_files(
@@ -48,13 +46,12 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS  include
   LIBRARIES  ${PROJECT_NAME}
-  CATKIN_DEPENDS  roscpp message_runtime geometry_msgs
-  DEPENDS  )
+  CATKIN_DEPENDS  roscpp message_runtime geometry_msgs dwl)
 
 
 # Setting flags for optimization
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -march=native -mno-avx -mtune=native -D EIGEN_NO_DEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_BUILD_TYPE "Release")
 
 
 include_directories(include)
