@@ -24,8 +24,8 @@ if __name__ == '__main__':
     time = [[k.getTime()] for k in ws_vec]
     
     # Base states
-    base_RPY = [[k.getBaseRPY_W()[i] for k in ws_vec] for i in range(3)]
-    base_pos = [[k.getBasePosition_W()[i] for k in ws_vec] for i in range(3)]
+    base_RPY = [[k.getBaseRPY()[i] for k in ws_vec] for i in range(3)]
+    base_pos = [[k.getBasePosition()[i] for k in ws_vec] for i in range(3)]
     base_omega = [[k.getBaseAngularVelocity_W()[i] for k in ws_vec] for i in range(3)]
     base_vel = [[k.getBaseVelocity_W()[i] for k in ws_vec] for i in range(3)]
     base_omaged = [[k.getBaseAngularAcceleration_W()[i] for k in ws_vec] for i in range(3)]
