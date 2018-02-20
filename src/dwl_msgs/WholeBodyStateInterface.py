@@ -49,8 +49,8 @@ class WholeBodyStateInterface():
         base_omegad = np.array([msg.base[dwl.AX].velocity,
                                 msg.base[dwl.AY].velocity,
                                 msg.base[dwl.AZ].velocity])
-        state.setBasePosition_W(base_pos)
-        state.setBaseRPY_W(base_rpy)
+        state.setBasePosition(base_pos)
+        state.setBaseRPY(base_rpy)
         state.setBaseVelocity_W(base_vel)
         state.setBaseAngularVelocity_W(base_omega)
         state.setBaseAcceleration_W(base_acc)
