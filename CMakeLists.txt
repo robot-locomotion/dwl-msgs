@@ -69,3 +69,8 @@ add_library(${PROJECT_NAME}  src/WholeBodyStateInterface.cpp
 target_link_libraries(${PROJECT_NAME}  ${catkin_LIBRARIES}
                                        ${dwl_LIBRARIES})
 add_dependencies(${PROJECT_NAME}  ${dwl_msgs_EXPORTED_TARGETS})
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+            DESTINATION DESTINATION include
+            FILES_MATCHING PATTERN "*.h*")
+install(TARGETS dwl_msgs LIBRARY DESTINATION lib)
