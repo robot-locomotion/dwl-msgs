@@ -133,11 +133,11 @@ class ControllerCommons
 		/**
 		 * @brief Updates the base state estimation subscription status which
 		 * is real-time friendly. This provides us the current base states
-		 * @param[in] base_pos Estimated base position
-		 * @param[in] base_vel Estimated base velocity
+		 * @param[out] base_pos Estimated base position
+		 * @param[out] base_vel Estimated base velocity
 		 */
-		void updateStateEstimationSubscription(Eigen::Vector6d& base_pos,
-											   Eigen::Vector6d& base_vel);
+		void updateStateEstimationSubscription(dwl::SE3& base_pos,
+											   dwl::Motion& base_vel);
 
 		/**
 		 * @brief Updates the motion plan subscription status which is

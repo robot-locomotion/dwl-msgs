@@ -66,8 +66,6 @@ class WholeBodyStateInterface
 		void writeFromMessage(dwl::WholeBodyTrajectory& traj,
 							  const dwl_msgs::WholeBodyTrajectory& msg);
 
-
-	private:
 		void writetoMessage(geometry_msgs::Pose& msg,
 							const dwl::SE3& state);
 		void writetoMessage(geometry_msgs::Twist& msg,
@@ -81,6 +79,8 @@ class WholeBodyStateInterface
 		void writeFromMessage(dwl::Force& state,
 							  geometry_msgs::Wrench& msg);
 
+
+	private:
 		/** @brief the floating-base system information */
 		std::shared_ptr<dwl::model::FloatingBaseSystem> fbs_;
 

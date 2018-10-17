@@ -326,31 +326,20 @@ void ControllerCommons::publishImuState(const ros::Time& time,
 }
 
 
-void ControllerCommons::updateStateEstimationSubscription(Eigen::Vector6d& base_pos,
-														  Eigen::Vector6d& base_vel)
+void ControllerCommons::updateStateEstimationSubscription(dwl::SE3& base_pos,
+														  dwl::Motion& base_vel)
 {
-	// Updating the base positions
-	geometry_msgs::Quaternion q = base_state_.pose.pose.orientation;
-	Eigen::Quaterniond base_quat(q.w, q.x, q.y, q.z);
-	Eigen::Vector3d base_rpy = dwl::math::getRPY(base_quat);
+	// Putting the information inside Pose and Twist messages
+	geometry_msgs::Pose pose;
+	pose.position = base_state_.pose.pose.position;
+	pose.orientation = base_state_.pose.pose.orientation;
+	geometry_msgs::Twist twist;
+	twist.linear = base_state_.twist.twist.linear;
+	twist.angular = base_state_.twist.twist.angular;
 
-	// The Roll Pitch Yaw convention defines a rotation about x0 (Roll) + a rotation about
-	// y0 (Pitch) + a rotation about z0 (Yaw). So, RPY XYZ (gamma,beta,alpha) is equal to
-	// Euler ZYX (alpha, beta, gamma)
-	base_pos(dwl::rbd::AX_V) = base_rpy(0);
-	base_pos(dwl::rbd::AY_V) = base_rpy(1);
-	base_pos(dwl::rbd::AZ_V) = base_rpy(2);
-	base_pos(dwl::rbd::LX_V) = base_state_.pose.pose.position.x;
-	base_pos(dwl::rbd::LY_V) = base_state_.pose.pose.position.y;
-	base_pos(dwl::rbd::LZ_V) = base_state_.pose.pose.position.z;
-
-	// Updating the base velocities
-	base_vel(dwl::rbd::AX_V) = base_state_.twist.twist.angular.x;
-	base_vel(dwl::rbd::AY_V) = base_state_.twist.twist.angular.y;
-	base_vel(dwl::rbd::AZ_V) = base_state_.twist.twist.angular.z;
-	base_vel(dwl::rbd::LX_V) = base_state_.twist.twist.linear.x;
-	base_vel(dwl::rbd::LY_V) = base_state_.twist.twist.linear.y;
-	base_vel(dwl::rbd::LZ_V) = base_state_.twist.twist.linear.z;
+	// Updating the base position and velocities
+	wb_iface_.writeFromMessage(base_pos, pose);
+	wb_iface_.writeFromMessage(base_vel, twist);
 }
 
 
