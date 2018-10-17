@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import rospy
 import roslib; roslib.load_manifest('dwl_msgs')
 
 import dwl
@@ -10,6 +11,7 @@ from dwl.dwl import FloatingBaseSystem
 
 class WholeBodyStateInterface():
     def __init__(self):
+        self.is_system = False
         return
     
     # This method fills the information of a WholeBodyState 
@@ -90,14 +92,16 @@ class WholeBodyStateInterface():
     # This method fills the information of a WholeBodyState object 
     # into a WholeBodyState ROS message
     def writeToMessage(self, msg, state):
-        if not is_system_:
+        if not self.is_system:
             print("Warning: you cannot write the dwl_msg::WholeBodyState "
                 "because it wasn't define the FloatingBaseSystem")
             return
         
         # Filling the time information
+        msg.header.stamp = rospy.Time(state.getTime())
+        msg.header.frame_id = self.fbs.getFloatingBaseName()
         msg.time = state.getTime()
-        
+
         # Filling the base state
         msg.base
         for i in range(6):
@@ -108,22 +112,22 @@ class WholeBodyStateInterface():
             base_msg.acceleration = state.base_acc[i]
             msg.base.append(base_msg)
         
-        fbs = FloatingBaseSystem()
         # Filling the joint state
         num_joints = state.getJointDoF()
         joint_names = self.fbs.getJointNames()
         for i in range(num_joints):
             joint_msg = JointState()
-            joint_msg.name = joint_name[i]
+            joint_msg.name = joint_names[i]
             joint_msg.position = state.getJointPosition(i)
             joint_msg.velocity = state.getJointVelocity(i)
             joint_msg.acceleration = state.getJointAcceleration(i)
             joint_msg.effort = state.getJointEffort(i)
-            msg.joint.append(joint_msg)
+            msg.joints.append(joint_msg)
             
         # Filling the contact state
         for c in state.getContactPosition_B():
             contact_msg = ContactState()
+            contact_msg.name = c
             pos = state.getContactPosition_B(c)
             vel = state.getContactVelocity_B(c)
             acc = state.getContactAcceleration_B(c)
@@ -137,10 +141,10 @@ class WholeBodyStateInterface():
             contact_msg.acceleration.x = acc[dwl.X]
             contact_msg.acceleration.y = acc[dwl.Y]
             contact_msg.acceleration.z = acc[dwl.Z]
-            contact_msg.wrench.torque.x = wrch[dwl.AX]
-            contact_msg.wrench.torque.y = wrch[dwl.AY]
-            contact_msg.wrench.torque.z = wrch[dwl.AZ]
-            contact_msg.wrench.force.x = wrch[dwl.LX]
-            contact_msg.wrench.force.y = wrch[dwl.LY]
-            contact_msg.wrench.force.z = wrch[dwl.LZ]
-            msg.contacts[c] = contact_msg
+            contact_msg.wrench.torque.x = wrc[dwl.AX]
+            contact_msg.wrench.torque.y = wrc[dwl.AY]
+            contact_msg.wrench.torque.z = wrc[dwl.AZ]
+            contact_msg.wrench.force.x = wrc[dwl.LX]
+            contact_msg.wrench.force.y = wrc[dwl.LY]
+            contact_msg.wrench.force.z = wrc[dwl.LZ]
+            msg.contacts.append(contact_msg)
