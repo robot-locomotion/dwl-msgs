@@ -15,7 +15,7 @@
 string name
 
 # State of the contact body
-geometry_msgs/Vector3 position
-geometry_msgs/Vector3 velocity
-geometry_msgs/Vector3 acceleration
+geometry_msgs/Pose pose
+geometry_msgs/Twist velocity
+geometry_msgs/Twist acceleration
 geometry_msgs/Wrench wrench

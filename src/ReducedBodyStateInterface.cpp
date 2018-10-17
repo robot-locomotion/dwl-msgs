@@ -10,15 +10,15 @@ ReducedBodyStateInterface::ReducedBodyStateInterface() : is_system_(false)
 }
 
 
-ReducedBodyStateInterface::ReducedBodyStateInterface(const dwl::model::FloatingBaseSystem& system) : is_system_(true)
+ReducedBodyStateInterface::ReducedBodyStateInterface(dwl::model::FloatingBaseSystem& fbs) : is_system_(true)
 {
-	fbs_ = system;
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
 }
 
 
-void ReducedBodyStateInterface::reset(const dwl::model::FloatingBaseSystem& system)
+void ReducedBodyStateInterface::reset(const dwl::model::FloatingBaseSystem& fbs)
 {
-	fbs_ = system;
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
 	is_system_ = true;
 }
 
@@ -36,24 +36,26 @@ void ReducedBodyStateInterface::writeToMessage(dwl_msgs::ReducedBodyState& msg,
 	msg.time = state.time;
 
 	// Filling the CoM position
-	msg.center_of_mass.x = state.com_pos(dwl::rbd::X);
-	msg.center_of_mass.y = state.com_pos(dwl::rbd::Y);
-	msg.center_of_mass.z = state.com_pos(dwl::rbd::Z);
+	const Eigen::Vector3d& com = state.getCoMSE3().getTranslation();
+	msg.center_of_mass.x = com(dwl::rbd::X);
+	msg.center_of_mass.y = com(dwl::rbd::Y);
+	msg.center_of_mass.z = com(dwl::rbd::Z);
 
 	// Filling the CoP position
-	msg.center_of_pressure.x = state.cop(dwl::rbd::X);
-	msg.center_of_pressure.y = state.cop(dwl::rbd::Y);
-	msg.center_of_pressure.z = state.cop(dwl::rbd::Z);
+	const Eigen::Vector3d& cop = state.getCoPPosition_W();
+	msg.center_of_pressure.x = cop(dwl::rbd::X);
+	msg.center_of_pressure.y = cop(dwl::rbd::Y);
+	msg.center_of_pressure.z = cop(dwl::rbd::Z);
 
 	// Filling the support position
 	msg.support_region.resize(state.support_region.size());
 	unsigned int idx = 0;
-	for (dwl::rbd::BodyVector3d::const_iterator vertex_it = state.support_region.begin();
-			vertex_it != state.support_region.end(); vertex_it++) {
-		Eigen::Vector3d vertex = vertex_it->second;
-		msg.support_region[idx].x = vertex(dwl::rbd::X);
-		msg.support_region[idx].y = vertex(dwl::rbd::Y);
-		msg.support_region[idx].z = vertex(dwl::rbd::Z);
+	for (dwl::SE3Map::const_iterator it = state.support_region.begin();
+			it != state.support_region.end(); ++it) {
+		dwl::SE3 vertex = it->second;
+		msg.support_region[idx].x = vertex.getTranslation()(dwl::rbd::X);
+		msg.support_region[idx].y = vertex.getTranslation()(dwl::rbd::Y);
+		msg.support_region[idx].z = vertex.getTranslation()(dwl::rbd::Z);
 		++idx;
 	}
 }
@@ -81,24 +83,25 @@ void ReducedBodyStateInterface::writeFromMessage(dwl::ReducedBodyState& state,
 	state.time = msg.time;
 
 	// Filling the CoM position
-	state.com_pos(dwl::rbd::X) = msg.center_of_mass.x;
-	state.com_pos(dwl::rbd::Y) = msg.center_of_mass.y;
-	state.com_pos(dwl::rbd::Z) = msg.center_of_mass.z;
+	state.setCoMSE3(dwl::SE3(Eigen::Vector3d(msg.center_of_mass.x,
+											 msg.center_of_mass.y,
+											 msg.center_of_mass.z),
+							 Eigen::Vector3d(0., 0., 0.)));
 
 	// Filling the CoP position
-	state.cop(dwl::rbd::X) = msg.center_of_pressure.x;
-	state.cop(dwl::rbd::Y) = msg.center_of_pressure.y;
-	state.cop(dwl::rbd::Z) = msg.center_of_pressure.z;
+	state.setCoPPosition_W(Eigen::Vector3d(msg.center_of_pressure.x,
+										   msg.center_of_pressure.y,
+										   msg.center_of_pressure.z));
 
 	// Filling the support position
 	Eigen::Vector3d vertex;
-	for (unsigned int i = 0; i < msg.support_region.size(); i++) {
-		std::string name = fbs_.getEndEffectorNames(dwl::model::FOOT)[i];
+	for (unsigned int i = 0; i < msg.support_region.size(); ++i) {
+		std::string name = fbs_->getEndEffectorList(dwl::model::FOOT)[i];
 		vertex(dwl::rbd::X) = msg.support_region[i].x;
 		vertex(dwl::rbd::Y) = msg.support_region[i].y;
 		vertex(dwl::rbd::Z) = msg.support_region[i].z;
 
-		state.support_region[name] = vertex;
+		state.setSupportRegion(name, dwl::SE3(vertex, Eigen::Vector3d(0.,0.,0.)));
 	}
 }
 

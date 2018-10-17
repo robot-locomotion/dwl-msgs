@@ -21,7 +21,7 @@ ControllerCommons::~ControllerCommons()
 
 
 void ControllerCommons::initControllerStatePublisher(ros::NodeHandle node,
-													 dwl::model::FloatingBaseSystem& system)
+													 const dwl::model::FloatingBaseSystem& fbs)
 {
 	// Getting the publish period
 	if (!node.getParam("publish_rate", controller_publish_rate_)) {
@@ -31,34 +31,30 @@ void ControllerCommons::initControllerStatePublisher(ros::NodeHandle node,
 	}
 
 	// Setting the floating-base system info
-	system_ = system;
-	wb_iface_.reset(system_);
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
+	wb_iface_.reset(fbs);
 
 	// Initializing the real-time publisher
 	controller_state_pub_.reset(new
 			realtime_tools::RealtimePublisher<dwl_msgs::WholeBodyController> (node, "state", 1));
 	controller_state_pub_->lock();
 
-	controller_state_pub_->msg_.desired.base.resize(6);
-	controller_state_pub_->msg_.actual.base.resize(6);
-	controller_state_pub_->msg_.error.base.resize(6);
+	controller_state_pub_->msg_.desired.joints.resize(fbs_->getJointDoF());
+	controller_state_pub_->msg_.actual.joints.resize(fbs_->getJointDoF());
+	controller_state_pub_->msg_.error.joints.resize(fbs_->getJointDoF());
 
-	controller_state_pub_->msg_.desired.joints.resize(system_.getJointDoF());
-	controller_state_pub_->msg_.actual.joints.resize(system_.getJointDoF());
-	controller_state_pub_->msg_.error.joints.resize(system_.getJointDoF());
+	controller_state_pub_->msg_.desired.contacts.resize(fbs_->getNumberOfEndEffectors());
+	controller_state_pub_->msg_.actual.contacts.resize(fbs_->getNumberOfEndEffectors());
+	controller_state_pub_->msg_.error.contacts.resize(fbs_->getNumberOfEndEffectors());
 
-	controller_state_pub_->msg_.desired.contacts.resize(system_.getNumberOfEndEffectors());
-	controller_state_pub_->msg_.actual.contacts.resize(system_.getNumberOfEndEffectors());
-	controller_state_pub_->msg_.error.contacts.resize(system_.getNumberOfEndEffectors());
-
-	controller_state_pub_->msg_.command.resize(system_.getJointDoF());
+	controller_state_pub_->msg_.command.resize(fbs_->getJointDoF());
 	controller_state_pub_->unlock();
 
 	init_controller_state_pub_ = true;
 }
 
 void ControllerCommons::initWholeBodyStatePublisher(ros::NodeHandle node,
-													dwl::model::FloatingBaseSystem& system)
+													const dwl::model::FloatingBaseSystem& fbs)
 {
 	// Getting the publish period
 	if (!node.getParam("publish_rate", robot_publish_rate_)) {
@@ -68,8 +64,8 @@ void ControllerCommons::initWholeBodyStatePublisher(ros::NodeHandle node,
 	}
 
 	// Setting the floating-base system info
-	system_ = system;
-	wb_iface_.reset(system_);
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
+	wb_iface_.reset(fbs);
 
 	// Getting the robot namespace. Note that this node is deploy in robot_ns/controller_ns
 	std::string robot_namespace = ros::names::parentNamespace(node.getNamespace());
@@ -80,9 +76,8 @@ void ControllerCommons::initWholeBodyStatePublisher(ros::NodeHandle node,
 			realtime_tools::RealtimePublisher<dwl_msgs::WholeBodyState> (robot_node, "robot_states", 1));
 	robot_state_pub_->lock();
 
-	robot_state_pub_->msg_.base.resize(6);
-	robot_state_pub_->msg_.joints.resize(system_.getJointDoF());
-	robot_state_pub_->msg_.contacts.resize(system_.getNumberOfEndEffectors());
+	robot_state_pub_->msg_.joints.resize(fbs_->getJointDoF());
+	robot_state_pub_->msg_.contacts.resize(fbs_->getNumberOfEndEffectors());
 
 	robot_state_pub_->unlock();
 
@@ -132,14 +127,14 @@ void ControllerCommons::initStateEstimationSubscriber(ros::NodeHandle node)
 
 
 void ControllerCommons::initMotionPlanSubscriber(ros::NodeHandle node,
-												 dwl::model::FloatingBaseSystem& system)
+												 const dwl::model::FloatingBaseSystem& fbs)
 {
 	plan_sub_ = node.subscribe<dwl_msgs::WholeBodyTrajectory> ("plan", 1,
 			&ControllerCommons::setPlanCB, this, ros::TransportHints().tcpNoDelay());
 
 	// Setting the floating-base system info
-	system_ = system;
-	wb_iface_.reset(system_);
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
+	wb_iface_.reset(fbs);
 }
 
 
@@ -172,11 +167,10 @@ void ControllerCommons::publishControllerState(const ros::Time& time,
 			wb_iface_.writeToMessage(controller_state_pub_->msg_.error, error_state);
 
 			// Populating joint command messages
-			dwl::urdf_model::JointID joint_links = system_.getJoints();
-			for (dwl::urdf_model::JointID::const_iterator joint_it = joint_links.begin();
-					joint_it != joint_links.end(); joint_it++) {
-				std::string name = joint_it->first;
-				unsigned int id = joint_it->second;
+			for (dwl::model::ElementId::const_iterator jnt_it = fbs_->getJoints().begin();
+					jnt_it != fbs_->getJoints().end(); ++jnt_it) {
+				std::string name = jnt_it->first;
+				unsigned int id = jnt_it->second;
 
 				controller_state_pub_->msg_.command[id].name = name;
 				controller_state_pub_->msg_.command[id].total = command_eff(id);
@@ -207,7 +201,7 @@ void ControllerCommons::publishWholeBodyState(const ros::Time& time,
 			// we're actually publishing, so increment time
 			last_robot_publish_time_ += ros::Duration(1.0 / robot_publish_rate_);
 			robot_state_pub_->msg_.header.stamp = time;
-			robot_state_pub_->msg_.header.frame_id = system_.getFloatingBaseBody();
+			robot_state_pub_->msg_.header.frame_id = fbs_->getFloatingBaseName();
 
 			wb_iface_.writeToMessage(robot_state_pub_->msg_, state);
 
@@ -218,8 +212,8 @@ void ControllerCommons::publishWholeBodyState(const ros::Time& time,
 
 
 void ControllerCommons::publishStateEstimation(const ros::Time& time,
-											   const dwl::rbd::Vector6d& base_pos,
-											   const dwl::rbd::Vector6d& base_vel)
+											   const Eigen::Vector6d& base_pos,
+											   const Eigen::Vector6d& base_vel)
 {
 	// Sanity check of the publisher initialization
 	if (!init_odom_state_pub_) {
@@ -232,7 +226,7 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 			ros::Duration(1.0 / odom_publish_rate_) < time) {
 		// Computing the orientation in quaternion
 		Eigen::Vector3d rpy;
-		rpy << base_pos(dwl::rbd::AX), base_pos(dwl::rbd::AY), base_pos(dwl::rbd::AZ);
+		rpy << base_pos(dwl::rbd::AX_V), base_pos(dwl::rbd::AY_V), base_pos(dwl::rbd::AZ_V);
 		Eigen::Quaterniond base_quat = dwl::math::getQuaternion(rpy);
 
 		// try to publish
@@ -242,19 +236,19 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 			base_state_pub_->msg_.header.stamp = time;
 			base_state_pub_->msg_.header.frame_id = "world";
 
-			base_state_pub_->msg_.pose.pose.position.x = base_pos(dwl::rbd::LX);
-			base_state_pub_->msg_.pose.pose.position.y = base_pos(dwl::rbd::LY);
-			base_state_pub_->msg_.pose.pose.position.z = base_pos(dwl::rbd::LZ);
+			base_state_pub_->msg_.pose.pose.position.x = base_pos(dwl::rbd::LX_V);
+			base_state_pub_->msg_.pose.pose.position.y = base_pos(dwl::rbd::LY_V);
+			base_state_pub_->msg_.pose.pose.position.z = base_pos(dwl::rbd::LZ_V);
 			base_state_pub_->msg_.pose.pose.orientation.x = base_quat.x();
 			base_state_pub_->msg_.pose.pose.orientation.y = base_quat.y();
 			base_state_pub_->msg_.pose.pose.orientation.z = base_quat.z();
 			base_state_pub_->msg_.pose.pose.orientation.w = base_quat.w();
-			base_state_pub_->msg_.twist.twist.linear.x = base_vel(dwl::rbd::LX);
-			base_state_pub_->msg_.twist.twist.linear.y = base_vel(dwl::rbd::LY);
-			base_state_pub_->msg_.twist.twist.linear.z = base_vel(dwl::rbd::LZ);
-			base_state_pub_->msg_.twist.twist.angular.x = base_vel(dwl::rbd::AX);
-			base_state_pub_->msg_.twist.twist.angular.y = base_vel(dwl::rbd::AY);
-			base_state_pub_->msg_.twist.twist.angular.z = base_vel(dwl::rbd::AZ);
+			base_state_pub_->msg_.twist.twist.linear.x = base_vel(dwl::rbd::LX_V);
+			base_state_pub_->msg_.twist.twist.linear.y = base_vel(dwl::rbd::LY_V);
+			base_state_pub_->msg_.twist.twist.linear.z = base_vel(dwl::rbd::LZ_V);
+			base_state_pub_->msg_.twist.twist.angular.x = base_vel(dwl::rbd::AX_V);
+			base_state_pub_->msg_.twist.twist.angular.y = base_vel(dwl::rbd::AY_V);
+			base_state_pub_->msg_.twist.twist.angular.z = base_vel(dwl::rbd::AZ_V);
 			base_state_pub_->unlockAndPublish();
 		}
 
@@ -265,9 +259,9 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
             pose_covariance_pub_->msg_.header.stamp = time;
             pose_covariance_pub_->msg_.header.frame_id = "world";
 
-            pose_covariance_pub_->msg_.pose.pose.position.x = base_pos(dwl::rbd::LX);
-            pose_covariance_pub_->msg_.pose.pose.position.y = base_pos(dwl::rbd::LY);
-            pose_covariance_pub_->msg_.pose.pose.position.z = base_pos(dwl::rbd::LZ);
+            pose_covariance_pub_->msg_.pose.pose.position.x = base_pos(dwl::rbd::LX_V);
+            pose_covariance_pub_->msg_.pose.pose.position.y = base_pos(dwl::rbd::LY_V);
+            pose_covariance_pub_->msg_.pose.pose.position.z = base_pos(dwl::rbd::LZ_V);
             pose_covariance_pub_->msg_.pose.pose.orientation.x = base_quat.x();
             pose_covariance_pub_->msg_.pose.pose.orientation.y = base_quat.y();
             pose_covariance_pub_->msg_.pose.pose.orientation.z = base_quat.z();
@@ -281,9 +275,9 @@ void ControllerCommons::publishStateEstimation(const ros::Time& time,
 		tf_msg.child_frame_id = "base_link";
 		tf_msg.header.frame_id = "world";
 
-		tf_msg.transform.translation.x = base_pos(dwl::rbd::LX);
-		tf_msg.transform.translation.y = base_pos(dwl::rbd::LY);
-		tf_msg.transform.translation.z = base_pos(dwl::rbd::LZ);
+		tf_msg.transform.translation.x = base_pos(dwl::rbd::LX_V);
+		tf_msg.transform.translation.y = base_pos(dwl::rbd::LY_V);
+		tf_msg.transform.translation.z = base_pos(dwl::rbd::LZ_V);
 		tf_msg.transform.rotation.x = base_quat.x();
 		tf_msg.transform.rotation.y = base_quat.y();
 		tf_msg.transform.rotation.z = base_quat.z();
@@ -332,8 +326,8 @@ void ControllerCommons::publishImuState(const ros::Time& time,
 }
 
 
-void ControllerCommons::updateStateEstimationSubscription(dwl::rbd::Vector6d& base_pos,
-											   	   	   	  dwl::rbd::Vector6d& base_vel)
+void ControllerCommons::updateStateEstimationSubscription(Eigen::Vector6d& base_pos,
+														  Eigen::Vector6d& base_vel)
 {
 	// Updating the base positions
 	geometry_msgs::Quaternion q = base_state_.pose.pose.orientation;
@@ -343,20 +337,20 @@ void ControllerCommons::updateStateEstimationSubscription(dwl::rbd::Vector6d& ba
 	// The Roll Pitch Yaw convention defines a rotation about x0 (Roll) + a rotation about
 	// y0 (Pitch) + a rotation about z0 (Yaw). So, RPY XYZ (gamma,beta,alpha) is equal to
 	// Euler ZYX (alpha, beta, gamma)
-	base_pos(dwl::rbd::AX) = base_rpy(0);
-	base_pos(dwl::rbd::AY) = base_rpy(1);
-	base_pos(dwl::rbd::AZ) = base_rpy(2);
-	base_pos(dwl::rbd::LX) = base_state_.pose.pose.position.x;
-	base_pos(dwl::rbd::LY) = base_state_.pose.pose.position.y;
-	base_pos(dwl::rbd::LZ) = base_state_.pose.pose.position.z;
+	base_pos(dwl::rbd::AX_V) = base_rpy(0);
+	base_pos(dwl::rbd::AY_V) = base_rpy(1);
+	base_pos(dwl::rbd::AZ_V) = base_rpy(2);
+	base_pos(dwl::rbd::LX_V) = base_state_.pose.pose.position.x;
+	base_pos(dwl::rbd::LY_V) = base_state_.pose.pose.position.y;
+	base_pos(dwl::rbd::LZ_V) = base_state_.pose.pose.position.z;
 
 	// Updating the base velocities
-	base_vel(dwl::rbd::AX) = base_state_.twist.twist.angular.x;
-	base_vel(dwl::rbd::AY) = base_state_.twist.twist.angular.y;
-	base_vel(dwl::rbd::AZ) = base_state_.twist.twist.angular.z;
-	base_vel(dwl::rbd::LX) = base_state_.twist.twist.linear.x;
-	base_vel(dwl::rbd::LY) = base_state_.twist.twist.linear.y;
-	base_vel(dwl::rbd::LZ) = base_state_.twist.twist.linear.z;
+	base_vel(dwl::rbd::AX_V) = base_state_.twist.twist.angular.x;
+	base_vel(dwl::rbd::AY_V) = base_state_.twist.twist.angular.y;
+	base_vel(dwl::rbd::AZ_V) = base_state_.twist.twist.angular.z;
+	base_vel(dwl::rbd::LX_V) = base_state_.twist.twist.linear.x;
+	base_vel(dwl::rbd::LY_V) = base_state_.twist.twist.linear.y;
+	base_vel(dwl::rbd::LZ_V) = base_state_.twist.twist.linear.z;
 }
 
 

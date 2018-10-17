@@ -15,19 +15,10 @@
 # identified with its name
 
 
-# Floating-base identifiers
-uint8 AX=0
-uint8 AY=1
-uint8 AZ=2
-uint8 LX=3
-uint8 LY=4
-uint8 LZ=5
-
 # Name and id of the floating-base joint
 string name
-uint8 id
 
 # States of the floating-base joint
-float64 position
-float64 velocity
-float64 acceleration
+geometry_msgs/Pose pose
+geometry_msgs/Twist velocity
+geometry_msgs/Twist acceleration

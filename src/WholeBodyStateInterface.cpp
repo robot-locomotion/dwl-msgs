@@ -10,15 +10,15 @@ WholeBodyStateInterface::WholeBodyStateInterface() : is_system_(false)
 }
 
 
-WholeBodyStateInterface::WholeBodyStateInterface(const dwl::model::FloatingBaseSystem& system) : is_system_(true)
+WholeBodyStateInterface::WholeBodyStateInterface(const dwl::model::FloatingBaseSystem& fbs) : is_system_(true)
 {
-	fbs_ = system;
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
 }
 
 
-void WholeBodyStateInterface::reset(const dwl::model::FloatingBaseSystem& system)
+void WholeBodyStateInterface::reset(const dwl::model::FloatingBaseSystem& fbs)
 {
-	fbs_ = system;
+	fbs_ = std::make_shared<dwl::model::FloatingBaseSystem>(fbs);
 	is_system_ = true;
 }
 
@@ -40,32 +40,19 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 	msg.time = state.time;
 
 	// Filling the base state
-	if (fbs_.isFullyFloatingBase())
-		msg.base.resize(6);
-	else
-		msg.base.resize(fbs_.getFloatingBaseDoF());
-	unsigned int counter = 0;
-	for (unsigned int base_idx = 0; base_idx < 6; ++base_idx) {
-		dwl::rbd::Coords6d base_coord = dwl::rbd::Coords6d(base_idx);
-		dwl::model::FloatingBaseJoint base_joint = fbs_.getFloatingBaseJoint(base_coord);
-
-		if (base_joint.active) {
-			msg.base[counter].id = base_idx;
-			msg.base[counter].name = base_joint.name;
-
-			msg.base[counter].position = state.base_pos(base_idx);
-			msg.base[counter].velocity = state.base_vel(base_idx);
-			msg.base[counter].acceleration = state.base_acc(base_idx);
-
-			counter++;
-		}
+	if (fbs_->isFloatingBase()) {
+		// Filling the data from the base state
+		msg.base.name = fbs_->getFloatingBaseName();
+		writetoMessage(msg.base.pose, state.getBaseSE3());
+		writetoMessage(msg.base.velocity, state.getBaseVelocity_W());
+		writetoMessage(msg.base.acceleration, state.getBaseAcceleration_W());
 	}
 
 	// Filling the joint state if there is information
-	if (state.joint_pos.size() == fbs_.getJointDoF()) { //safety check
-		msg.joints.resize(fbs_.getJointDoF());
-		for (dwl::urdf_model::JointID::const_iterator jnt_it = fbs_.getJoints().begin();
-				jnt_it != fbs_.getJoints().end(); ++jnt_it) {
+	if (state.joint_pos.size() == fbs_->getJointDoF()) { //safety check
+		msg.joints.resize(fbs_->getJointDoF());
+		for (dwl::model::ElementId::const_iterator jnt_it = fbs_->getJoints().begin();
+				jnt_it != fbs_->getJoints().end(); ++jnt_it) {
 			std::string name = jnt_it->first;
 			unsigned int id = jnt_it->second;
 
@@ -81,60 +68,22 @@ void WholeBodyStateInterface::writeToMessage(dwl_msgs::WholeBodyState& msg,
 	// Note that planners can(not) generates contact information, at the same
 	// time, controllers could(not) used it. If the controller need a missing
 	// contact information, then it could computed from the joint trajectory
-	unsigned int contact_counter = 0;
-	msg.contacts.resize(state.contact_pos.size());
-	dwl::urdf_model::LinkID contact_links = fbs_.getEndEffectors();
-	for (dwl::urdf_model::LinkID::const_iterator contact_it = contact_links.begin();
-			contact_it != contact_links.end(); ++contact_it) {
-		std::string name = contact_it->first;
+	unsigned int counter = 0;
+	dwl::model::ElementId contact_links = fbs_->getEndEffectors();
+	msg.contacts.resize(contact_links.size());
+	for (dwl::model::ElementId::const_iterator it = contact_links.begin();
+			it != contact_links.end(); ++it) {
+		std::string name = it->first;
 
-		// Defining the contact state vectors
-		Eigen::Vector3d position, velocity, acceleration;
-		dwl::rbd::Vector6d effort;
+		// Filling the data from the contact state
+		msg.contacts[counter].name = name;
+		writetoMessage(msg.contacts[counter].pose, state.getContactSE3_B(name));
+		writetoMessage(msg.contacts[counter].velocity, state.getContactVelocity_B(name));
+		writetoMessage(msg.contacts[counter].acceleration, state.getContactAcceleration_B(name));
+		writetoMessage(msg.contacts[counter].wrench, state.getContactWrench_B(name));
 
-		// Defining the contact iterators
-		dwl::rbd::BodyVectorXd::const_iterator pos_it, vel_it, acc_it;
-		dwl::rbd::BodyVector6d::const_iterator eff_it;
-
-		// Filling the contact state
-		pos_it = state.contact_pos.find(name);
-		vel_it = state.contact_vel.find(name);
-		acc_it = state.contact_acc.find(name);
-		eff_it = state.contact_eff.find(name);
-		if (pos_it != state.contact_pos.end()) {
-			// Filling the name of the contact
-			msg.contacts[contact_counter].name = name;
-
-			position = pos_it->second.tail(3);
-			msg.contacts[contact_counter].position.x = position(dwl::rbd::X);
-			msg.contacts[contact_counter].position.y = position(dwl::rbd::Y);
-			msg.contacts[contact_counter].position.z = position(dwl::rbd::Z);
-
-			if (vel_it != state.contact_vel.end()) {
-				velocity = vel_it->second.tail(3);
-				msg.contacts[contact_counter].velocity.x = velocity(dwl::rbd::X);
-				msg.contacts[contact_counter].velocity.y = velocity(dwl::rbd::Y);
-				msg.contacts[contact_counter].velocity.z = velocity(dwl::rbd::Z);
-			}
-			if (acc_it != state.contact_acc.end()) {
-				acceleration = acc_it->second.tail(3);
-				msg.contacts[contact_counter].acceleration.x = acceleration(dwl::rbd::X);
-				msg.contacts[contact_counter].acceleration.y = acceleration(dwl::rbd::Y);
-				msg.contacts[contact_counter].acceleration.z = acceleration(dwl::rbd::Z);
-			}
-			if (eff_it != state.contact_eff.end()) {
-				effort = eff_it->second;
-				msg.contacts[contact_counter].wrench.torque.x = effort(dwl::rbd::AX);
-				msg.contacts[contact_counter].wrench.torque.y = effort(dwl::rbd::AY);
-				msg.contacts[contact_counter].wrench.torque.z = effort(dwl::rbd::AZ);
-				msg.contacts[contact_counter].wrench.force.x = effort(dwl::rbd::LX);
-				msg.contacts[contact_counter].wrench.force.y = effort(dwl::rbd::LY);
-				msg.contacts[contact_counter].wrench.force.z = effort(dwl::rbd::LZ);
-			}
-
-			// Incrementing the contact counter
-			contact_counter++;
-		}
+		// Incrementing the contact counter
+		++counter;
 	}
 }
 
@@ -161,33 +110,25 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 	state.time = msg.time;
 
 	// Writing the base states
-	unsigned num_base = msg.base.size();
-	for (unsigned int i = 0; i < num_base; ++i) {
-		unsigned base_id = msg.base[i].id;
-
-		state.base_pos(base_id) = msg.base[i].position;
-		state.base_vel(base_id) = msg.base[i].velocity;
-		state.base_acc(base_id) = msg.base[i].acceleration;
-	}
+	writeFromMessage(state.base_pos, msg.base.pose);
+	writeFromMessage(state.base_vel, msg.base.velocity);
+	writeFromMessage(state.base_acc, msg.base.acceleration);
 
 	// Sanity check: checking the size of the joint states
-	if (state.joint_pos.size() != fbs_.getJointDoF())
-		state.joint_pos = Eigen::VectorXd::Zero(fbs_.getJointDoF());
-	if (state.joint_vel.size() != fbs_.getJointDoF())
-		state.joint_vel = Eigen::VectorXd::Zero(fbs_.getJointDoF());
-	if (state.joint_acc.size() != fbs_.getJointDoF())
-		state.joint_acc = Eigen::VectorXd::Zero(fbs_.getJointDoF());
-	if (state.joint_eff.size() != fbs_.getJointDoF())
-		state.joint_eff = Eigen::VectorXd::Zero(fbs_.getJointDoF());
+	if (state.joint_pos.size() != fbs_->getJointDoF())
+		state.joint_pos = Eigen::VectorXd::Zero(fbs_->getJointDoF());
+	if (state.joint_vel.size() != fbs_->getJointDoF())
+		state.joint_vel = Eigen::VectorXd::Zero(fbs_->getJointDoF());
+	if (state.joint_acc.size() != fbs_->getJointDoF())
+		state.joint_acc = Eigen::VectorXd::Zero(fbs_->getJointDoF());
+	if (state.joint_eff.size() != fbs_->getJointDoF())
+		state.joint_eff = Eigen::VectorXd::Zero(fbs_->getJointDoF());
 
 	// Writing the joint states
-	dwl::urdf_model::JointID joints = fbs_.getJoints();
 	unsigned num_joints = msg.joints.size();
 	for (unsigned int i = 0; i < num_joints; ++i) {
 		std::string name = msg.joints[i].name;
-
-		dwl::urdf_model::JointID::iterator joint_it = joints.find(name);
-		unsigned int joint_id = joint_it->second;
+		unsigned int joint_id = fbs_->getJointId(name);
 
 		state.joint_pos(joint_id) = msg.joints[i].position;
 		state.joint_vel(joint_id) = msg.joints[i].velocity;
@@ -196,7 +137,7 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 	}
 
 	// Writing the contact states
-	Eigen::Vector3d contact_state;
+//	Eigen::Vector3d contact_state;
 	unsigned int num_contacts = msg.contacts.size();
 	for (unsigned int i = 0; i < num_contacts; ++i) {
 		// Getting the contact message
@@ -205,33 +146,21 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyState& state,
 		// Getting the contact name
 		std::string name = contact_msg.name;
 
-		// Updating the contact position
-		contact_state(dwl::rbd::X) = contact_msg.position.x;
-		contact_state(dwl::rbd::Y) = contact_msg.position.y;
-		contact_state(dwl::rbd::Z) = contact_msg.position.z;
-		state.contact_pos[name] = contact_state;
+		dwl::SE3 pose;
+		dwl::Motion vel, acc;
+		dwl::Force wrch;
 
-		// Updating the contact velocity
-		contact_state(dwl::rbd::X) = contact_msg.velocity.x;
-		contact_state(dwl::rbd::Y) = contact_msg.velocity.y;
-		contact_state(dwl::rbd::Z) = contact_msg.velocity.z;
-		state.contact_vel[name] = contact_state;
+		// Getting the data from the message
+		writeFromMessage(pose, contact_msg.pose);
+		writeFromMessage(vel, contact_msg.velocity);
+		writeFromMessage(acc, contact_msg.acceleration);
+		writeFromMessage(wrch, contact_msg.wrench);
 
-		// Updating the contact acceleration
-		contact_state(dwl::rbd::X) = contact_msg.acceleration.x;
-		contact_state(dwl::rbd::Y) = contact_msg.acceleration.y;
-		contact_state(dwl::rbd::Z) = contact_msg.acceleration.z;
-		state.contact_acc[name] = contact_state;
-
-		// Updating the contact wrench
-		dwl::rbd::Vector6d effort;
-		effort(dwl::rbd::AX) = contact_msg.wrench.torque.x;
-		effort(dwl::rbd::AY) = contact_msg.wrench.torque.y;
-		effort(dwl::rbd::AZ) = contact_msg.wrench.torque.z;
-		effort(dwl::rbd::LX) = contact_msg.wrench.force.x;
-		effort(dwl::rbd::LY) = contact_msg.wrench.force.y;
-		effort(dwl::rbd::LZ) = contact_msg.wrench.force.z;
-		state.contact_eff[name] = effort;
+		// Filling the data inside the whole-body state
+		state.setContactSE3_B(name, pose);
+		state.setContactVelocity_B(name, vel);
+		state.setContactAcceleration_B(name, acc);
+		state.setContactWrench_B(name, wrch);
 	}
 }
 
@@ -244,6 +173,92 @@ void WholeBodyStateInterface::writeFromMessage(dwl::WholeBodyTrajectory& traj,
 	traj.resize(num_points);
 	for (unsigned int i = 0; i < num_points; ++i)
 		writeFromMessage(traj[i], msg.trajectory[i]);
+}
+
+
+void WholeBodyStateInterface::writetoMessage(geometry_msgs::Pose& msg,
+											 const dwl::SE3& state)
+{
+	const Eigen::Vector7d& pose = state.toVector();
+
+	// Filling the pose
+	msg.position.x = pose(dwl::rbd::LX_Q);
+	msg.position.y = pose(dwl::rbd::LY_Q);
+	msg.position.z = pose(dwl::rbd::LZ_Q);
+	msg.orientation.x = pose(dwl::rbd::AX_Q);
+	msg.orientation.y = pose(dwl::rbd::AY_Q);
+	msg.orientation.z = pose(dwl::rbd::AZ_Q);
+	msg.orientation.w = pose(dwl::rbd::AW_Q);
+}
+
+
+void WholeBodyStateInterface::writetoMessage(geometry_msgs::Twist& msg,
+											 const dwl::Motion& state)
+{
+	const Eigen::Vector6d& twist = state.toVector();
+
+	// Filling the pose
+	msg.linear.x = twist(dwl::rbd::LX_V);
+	msg.linear.y = twist(dwl::rbd::LY_V);
+	msg.linear.z = twist(dwl::rbd::LZ_V);
+	msg.angular.x = twist(dwl::rbd::AX_V);
+	msg.angular.y = twist(dwl::rbd::AY_V);
+	msg.angular.z = twist(dwl::rbd::AZ_V);
+}
+
+
+void WholeBodyStateInterface::writetoMessage(geometry_msgs::Wrench& msg,
+											 const dwl::Force& state)
+{
+	const Eigen::Vector6d& wrench = state.toVector();
+
+	// Filling the pose
+	msg.force.x = wrench(dwl::rbd::LX_V);
+	msg.force.y = wrench(dwl::rbd::LY_V);
+	msg.force.z = wrench(dwl::rbd::LZ_V);
+	msg.torque.x = wrench(dwl::rbd::AX_V);
+	msg.torque.y = wrench(dwl::rbd::AY_V);
+	msg.torque.z = wrench(dwl::rbd::AZ_V);
+}
+
+
+void WholeBodyStateInterface::writeFromMessage(dwl::SE3& state,
+											   const geometry_msgs::Pose& msg)
+{
+	// Filling the message in the state
+	state.setTranslation(Eigen::Vector3d(msg.position.x,
+										 msg.position.y,
+										 msg.position.z));
+	state.setQuaternion(Eigen::Vector4d(msg.orientation.x,
+										msg.orientation.y,
+										msg.orientation.z,
+										msg.orientation.w));
+}
+
+
+void WholeBodyStateInterface::writeFromMessage(dwl::Motion& state,
+					  	  	  	  	  	  	   const geometry_msgs::Twist& msg)
+{
+	// Filling the message in the state
+	state.setLinear(Eigen::Vector3d(msg.linear.x,
+									msg.linear.y,
+									msg.linear.z));
+	state.setAngular(Eigen::Vector3d(msg.angular.x,
+									 msg.angular.y,
+									 msg.angular.z));
+}
+
+
+void WholeBodyStateInterface::writeFromMessage(dwl::Force& state,
+					  	  	  	  	  	  	   geometry_msgs::Wrench& msg)
+{
+	// Filling the message in the state
+	state.setLinear(Eigen::Vector3d(msg.force.x,
+									msg.force.y,
+									msg.force.z));
+	state.setAngular(Eigen::Vector3d(msg.torque.x,
+									 msg.torque.y,
+									 msg.torque.z));
 }
 
 } //@namespace dwl_msgs

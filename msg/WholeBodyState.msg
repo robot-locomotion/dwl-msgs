@@ -18,7 +18,7 @@ Header header
 float64 time
 
 # This represents the base state (position, velocity, acceleration and effort)
-dwl_msgs/BaseState[] base
+dwl_msgs/BaseState base
 
 # This represents the joint state (position, velocity, acceleration and effort)
 dwl_msgs/JointState[] joints

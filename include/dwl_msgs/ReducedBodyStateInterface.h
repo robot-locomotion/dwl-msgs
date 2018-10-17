@@ -21,21 +21,21 @@ class ReducedBodyStateInterface
 	public:
 		/** @brief Constructor function */
 		ReducedBodyStateInterface();
-		ReducedBodyStateInterface(const dwl::model::FloatingBaseSystem& system);
+		ReducedBodyStateInterface(dwl::model::FloatingBaseSystem& fbs);
 
 		/** @brief Destructor function */
 		~ReducedBodyStateInterface();
 
 		/**
 		 * @brief Resets the floating-base system information
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system
+		 * @param[in] fbs Floating-base system
 		 */
-		void reset(const dwl::model::FloatingBaseSystem& system);
+		void reset(const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Writes a dwl_msgs::ReducedBodyState from a dwl::ReducedBodyState
-		 * @param dwl_msgs::ReducedBodyState& Reduced-body state ros message
-		 * @param const dwl::ReducedBodyState& Reduced-body state
+		 * @param[ou] msg Reduced-body state ros message
+		 * @param[in] state Reduced-body state
 		 */
 		void writeToMessage(dwl_msgs::ReducedBodyState& msg,
 							const dwl::ReducedBodyState& state);
@@ -43,16 +43,16 @@ class ReducedBodyStateInterface
 		/**
 		 * @brief Writes a dwl_msgs::ReducedBodyTrajectory from a
 		 * dwl::ReducedBodyTrajectory
-		 * @param dwl_msgs::ReducedBodyTrajectory& Reduced-body trajectory ros message
-		 * @param const dwl::ReducedBodyTrajectory& Reduced-body trajectory
+		 * @param[out] msg Reduced-body trajectory ros message
+		 * @param[in] traj Reduced-body trajectory
 		 */
 		void writeToMessage(dwl_msgs::ReducedBodyTrajectory& msg,
 							const dwl::ReducedBodyTrajectory& traj);
 
 		/**
 		 * @brief Writes a dwl::ReducedBodyState from a dwl_msgs::ReducedBodyState
-		 * @param dwl_msgs::ReducedBodyState& Reduced-body state ros message
-		 * @param const dwl::ReducedBodyState& Reduced-body state
+		 * @param[out] state Reduced-body state ros message
+		 * @param[in] msg Reduced-body state
 		 */
 		void writeFromMessage(dwl::ReducedBodyState& state,
 							  const dwl_msgs::ReducedBodyState& msg);
@@ -60,8 +60,8 @@ class ReducedBodyStateInterface
 		/**
 		 * @brief Writes a dwl::ReducedBodyTrajectory from a
 		 * dwl_msgs::ReducedBodyTrajectory
-		 * @param dwl_msgs::ReducedBodyTrajectory& Reduced-body trajectory ros message
-		 * @param const dwl::ReducedBodyTrajectory& Reduced-body trajectory
+		 * @param[out] traj Reduced-body trajectory ros message
+		 * @param[in] msg Reduced-body trajectory
 		 */
 		void writeFromMessage(dwl::ReducedBodyTrajectory& traj,
 							  const dwl_msgs::ReducedBodyTrajectory& msg);
@@ -69,7 +69,7 @@ class ReducedBodyStateInterface
 
 	private:
 		/** @brief the floating-base system information */
-		dwl::model::FloatingBaseSystem fbs_;
+		std::shared_ptr<dwl::model::FloatingBaseSystem> fbs_;
 
 		/** @brief Indicates if it was defined the floating-base system */
 		bool is_system_;

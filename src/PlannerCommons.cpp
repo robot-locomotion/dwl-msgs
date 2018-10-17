@@ -20,10 +20,10 @@ PlannerCommons::~PlannerCommons()
 
 void PlannerCommons::initMotionPlanStatePublisher(ros::NodeHandle node_pub,
 												  ros::NodeHandle node_params,
-												  dwl::model::FloatingBaseSystem& system)
+												  const dwl::model::FloatingBaseSystem& fbs)
 {
 	// Setting the floating-base system info
-	wb_iface_.reset(system);
+	wb_iface_.reset(fbs);
 
 	// Initializing the publisher
 	motion_plan_pub_ =
@@ -53,10 +53,10 @@ void PlannerCommons::initReducedPlanPublisher(ros::NodeHandle node_pub,
 
 
 void PlannerCommons::initRobotStateSubscriber(ros::NodeHandle node,
-											  dwl::model::FloatingBaseSystem& system)
+											  const dwl::model::FloatingBaseSystem& fbs)
 {
 	// Setting the floating-base system info
-	wb_iface_.reset(system);
+	wb_iface_.reset(fbs);
 
 	robot_state_sub_ = node.subscribe<dwl_msgs::WholeBodyState>(node.getNamespace() + "/robot_states", 1,
 			&PlannerCommons::setRobotStateCB, this, ros::TransportHints().tcpNoDelay());
@@ -64,10 +64,10 @@ void PlannerCommons::initRobotStateSubscriber(ros::NodeHandle node,
 
 
 void PlannerCommons::initControllertStateSubscriber(ros::NodeHandle node,
-													dwl::model::FloatingBaseSystem& system)
+													const dwl::model::FloatingBaseSystem& fbs)
 {
 	// Setting the floating-base system info
-	wb_iface_.reset(system);
+	wb_iface_.reset(fbs);
 
 	controller_state_sub_ = node.subscribe<dwl_msgs::WholeBodyController>(node.getNamespace() + "/state", 1,
 			&PlannerCommons::setControllerStateCB, this, ros::TransportHints().tcpNoDelay());

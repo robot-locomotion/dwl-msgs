@@ -6,7 +6,6 @@
 
 #include <dwl_msgs/WholeBodyStateInterface.h>
 #include <dwl_msgs/ReducedBodyStateInterface.h>
-#include <dwl/locomotion/WholeBodyTrajectoryOptimization.h>
 
 // Messages headers
 #include <dwl_msgs/WholeBodyController.h>
@@ -27,19 +26,19 @@ class PlannerCommons
 		/**
 		 * @brief Creates a publisher of the motion plan. The name of the
 		 * topic is defined as node_ns/plan
-		 * @param ros::NodeHandle ROS node handle used by the publishing
-		 * @param ros::NodeHandle ROS node handle used by the reading of params
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 * @param[in] node_pub ROS node handle used by the publishing
+		 * @param[in] node_params ROS node handle used by the reading of params
+		 * @param[in] fbs Floating-base system information
 		 */
 		void initMotionPlanStatePublisher(ros::NodeHandle node_pub,
 										  ros::NodeHandle node_params,
-										  dwl::model::FloatingBaseSystem& system);
+										  const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Created a publisher of the reduced-motion plan. The name
 		 * of the topic is defined as node_ns/reduced_plan
-		 * @param ros::NodeHandle ROS node handle used by the publishing
-		 * @param ros::NodeHandle ROS node handle used by the reading of params
+		 * @param[in] node_pub ROS node handle used by the publishing
+		 * @param[in] node_params ROS node handle used by the reading of params
 		 */
 		void initReducedPlanPublisher(ros::NodeHandle node_pub,
 									  ros::NodeHandle node_params);
@@ -47,33 +46,33 @@ class PlannerCommons
 		/**
 		 * @brief Creates a subscriber of the robot state. The name of the
 		 * topic is defined as node_ns/robot_states
-		 * @param ros::NodeHandle ROS node handle used by the subscription
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 * @param[in] node ROS node handle used by the subscription
+		 * @param[in] fbs Floating-base system information
 		 */
 		void initRobotStateSubscriber(ros::NodeHandle node,
-									  dwl::model::FloatingBaseSystem& system);
+									  const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Creates a subscriber of the controller state. The name of the
 		 * topic is defined as node_ns/state
-		 * @param ros::NodeHandle ROS node handle used by the subscription
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 * @param[in] node ROS node handle used by the subscription
+		 * @param[in] fbs Floating-base system information
 		 */
 		void initControllertStateSubscriber(ros::NodeHandle node,
-											dwl::model::FloatingBaseSystem& system);
+											const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Publishes the motion plan messages
-		 * @param const dwl::WholeBodyState& Current whole-body state
-		 * @param const dwl::WholeBodyTrajectory& Planned whole-body trajectory
+		 * @param[in] current_state Current whole-body state
+		 * @param[in] trajectory Planned whole-body trajectory
 		 */
 		void publishMotionPlan(const dwl::WholeBodyState& current_state,
 							   const dwl::WholeBodyTrajectory& trajectory);
 
 		/**
 		 * @brief Publishes the reduced motion plan messages
-		 * @param const dwl::ReducedBodyState& Current reduced-body state
-		 * @param const dwl::ReducedTrajectory& Planned reduced-body state
+		 * @param[in] current_state Current reduced-body state
+		 * @param[in] trajectory Planned reduced-body state
 		 */
 		void publishReducedPlan(const dwl::ReducedBodyState& current_state,
 								const dwl::ReducedBodyTrajectory& trajectory);
@@ -81,16 +80,16 @@ class PlannerCommons
 		/**
 		 * @brief Updates the robot state subscription status which is
 		 * real-time friendly. This provides us the current robot states
-		 * @param dwl::WholeBodyState& Whole-body state
+		 * @param[out] robot_state Whole-body state
 		 */
 		void updateRobotStateSubscription(dwl::WholeBodyState& robot_state);
 
 		/**
 		 * @brief Updates the controller state subscription status which is
 		 * real-time friendly. This provides us the current robot states
-		 * @param dwl::WholeBodyState& Desired whole-body state
-		 * @param dwl::WholeBodyState& Actual whole-body state
-		 * @param dwl::WholeBodyState& Error whole-body state
+		 * @param[out] desired Desired whole-body state
+		 * @param[out] actual Actual whole-body state
+		 * @param[out] error Error whole-body state
 		 */
 		void updateControllerStateSubscription(dwl::WholeBodyState& desired,
 											   dwl::WholeBodyState& actual,
@@ -98,16 +97,16 @@ class PlannerCommons
 
 		/**
 		 * @brief Gets the robot state if there is a received message
-		 * @param dwl::WholeBodyState& Received robot state
+		 * @param[out] robot_state Received robot state
 		 * @return Returns true if there is a received robot state
 		 */
 		bool getRobotState(dwl::WholeBodyState& robot_state);
 
 		/**
 		 * @brief Gets the controller state if there is a received message
-		 * @param dwl::WholeBodyState& Desired whole-body state
-		 * @param dwl::WholeBodyState& Actual whole-body state
-		 * @param dwl::WholeBodyState& Error whole-body state
+		 * @param[out] desired Desired whole-body state
+		 * @param[out] actual Actual whole-body state
+		 * @param[out] error Error whole-body state
 		 * @return Returns true if there is a received controller state
 		 */
 		bool getControllerState(dwl::WholeBodyState& desired,
@@ -122,14 +121,14 @@ class PlannerCommons
 
 		/**
 		 * @brief Robot state callback function of the subscriber
-		 * @param const dwl_msgs::WholeBodyStateConstPtr& Whole-body state message
+		 * @param[in] msg Whole-body state message
 		 */
 		void setRobotStateCB(const dwl_msgs::WholeBodyStateConstPtr& msg);
 
 
 		/**
 		 * @brief Controller state callback function of the subscriber
-		 * @param const dwl_msgs::WholeBodyControllerConstPtr& Whole-body state message
+		 * @param[in] msg Whole-body state message
 		 */
 		void setControllerStateCB(const dwl_msgs::WholeBodyControllerConstPtr& msg);
 

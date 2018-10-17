@@ -21,21 +21,21 @@ class WholeBodyStateInterface
 	public:
 		/** @brief Constructor function */
 		WholeBodyStateInterface();
-		WholeBodyStateInterface(const dwl::model::FloatingBaseSystem& system);
+		WholeBodyStateInterface(const dwl::model::FloatingBaseSystem& fbs);
 
 		/** @brief Destructor function */
 		~WholeBodyStateInterface();
 
 		/**
 		 * @brief Resets the floating-base system information
-		 * @param const dwl::model::FloatingBaseSystem& Floating-base system
+		 * @param[in] fbs Floating-base system
 		 */
-		void reset(const dwl::model::FloatingBaseSystem& system);
+		void reset(const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Writes a dwl_msgs::WholeBodyState from a dwl::WholeBodyState
-		 * @param dwl_msgs::WholeBodyState& Whole-body state ros message
-		 * @param const dwl::WholeBodyState& Whole-body state
+		 * @param[out] msg Whole-body state ros message
+		 * @param[in] state Whole-body state
 		 */
 		void writeToMessage(dwl_msgs::WholeBodyState& msg,
 							const dwl::WholeBodyState& state);
@@ -43,16 +43,16 @@ class WholeBodyStateInterface
 		/**
 		 * @brief Writes a dwl_msgs::WholeBodyTrajectory from a
 		 * dwl::WholeBodyTrajectory
-		 * @param dwl_msgs::WholeBodyTrajectory& Whole-body trajectory ros message
-		 * @param const dwl::WholeBodyTrajectory& Whole-body trajectory
+		 * @param[out] msg Whole-body trajectory ros message
+		 * @param[in] traj Whole-body trajectory
 		 */
 		void writeToMessage(dwl_msgs::WholeBodyTrajectory& msg,
 							const dwl::WholeBodyTrajectory& traj);
 
 		/**
 		 * @brief Writes a dwl::WholeBodyState from a dwl_msgs::WholeBodyState
-		 * @param dwl_msgs::WholeBodyState& Whole-body state ros message
-		 * @param const dwl::WholeBodyState& Whole-body state
+		 * @param[out] state Whole-body state ros message
+		 * @param[in] msg Whole-body state
 		 */
 		void writeFromMessage(dwl::WholeBodyState& state,
 							  const dwl_msgs::WholeBodyState& msg);
@@ -60,16 +60,29 @@ class WholeBodyStateInterface
 		/**
 		 * @brief Writes a dwl::WholeBodyTrajectory from a
 		 * dwl_msgs::WholeBodyTrajectory
-		 * @param dwl_msgs::WholeBodyTrajectory& Whole-body trajectory ros message
-		 * @param const dwl::WholeBodyTrajectory& Whole-body trajectory
+		 * @param[out] traj Whole-body trajectory ros message
+		 * @param[in] msg Whole-body trajectory
 		 */
 		void writeFromMessage(dwl::WholeBodyTrajectory& traj,
 							  const dwl_msgs::WholeBodyTrajectory& msg);
 
 
 	private:
+		void writetoMessage(geometry_msgs::Pose& msg,
+							const dwl::SE3& state);
+		void writetoMessage(geometry_msgs::Twist& msg,
+							const dwl::Motion& state);
+		void writetoMessage(geometry_msgs::Wrench& msg,
+							const dwl::Force& state);
+		void writeFromMessage(dwl::SE3& state,
+							  const geometry_msgs::Pose& msg);
+		void writeFromMessage(dwl::Motion& state,
+							  const geometry_msgs::Twist& msg);
+		void writeFromMessage(dwl::Force& state,
+							  geometry_msgs::Wrench& msg);
+
 		/** @brief the floating-base system information */
-		dwl::model::FloatingBaseSystem fbs_;
+		std::shared_ptr<dwl::model::FloatingBaseSystem> fbs_;
 
 		/** @brief Indicates if it was defined the floating-base system */
 		bool is_system_;

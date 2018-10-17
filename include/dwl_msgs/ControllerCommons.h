@@ -37,27 +37,27 @@ class ControllerCommons
 		/**
 		 * @brief Creates a real-time friendly publisher of the controller
 		 * state. The name of the topic is defined as node_ns/state
-		 * @param ros::NodeHandle ROS node handle used by the subscription
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 * @param[in] node ROS node handle used by the subscription
+		 * @param[in] fbs Floating-base system information
 		 */
 		void initControllerStatePublisher(ros::NodeHandle node,
-										  dwl::model::FloatingBaseSystem& system);
+										  const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Creates a real-time friendly publisher of the whole-body
 		 * state. The controller parameters are read in the namespace node_ns.
 		 * On the other hand, the name of the topic where is published the
 		 * message is defined as node_parent_ns/robot_states
-		 * @param ros::NodeHandle ROS node handle used by the subscription
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 * @param[in] node ROS node handle used by the subscription
+		 * @param[in] fbs Floating-base system information
 		 */
 		void initWholeBodyStatePublisher(ros::NodeHandle node,
-										 dwl::model::FloatingBaseSystem& system);
+										 const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Creates a real-time friendly publisher of the base state
 		 * estimation state. The name of the topic is defined as node_ns/odom
-		 * @param ros::NodeHandle ROS node handle used by the subscription
+		 * @param[in] node ROS node handle used by the subscription
 		 */
 		void initStateEstimationPublisher(ros::NodeHandle node);
 
@@ -71,28 +71,28 @@ class ControllerCommons
 		/**
 		 * @brief Creates a real-time subscriber of base state estimation.
 		 * The name of the topic is defined as node_ns/odom
-		 * @param ros::NodeHandle ROS node handle used by the subscription
+		 * @param[in] node ROS node handle used by the subscription
 		 */
 		void initStateEstimationSubscriber(ros::NodeHandle node);
 
 		/**
 		 * @brief Creates a real-time subscriber of motion plans. The name of
 		 * the topic is defined as node_ns/plan
-		 * @param ros::NodeHandle ROS node handle used by the subscription
-		 * @param dwl::model::FloatingBaseSystem& Floating-base system information
+		 * @param[in] node ROS node handle used by the subscription
+		 * @param[in] fbs Floating-base system information
 		 */
 		void initMotionPlanSubscriber(ros::NodeHandle node,
-									  dwl::model::FloatingBaseSystem& system);
+									  const dwl::model::FloatingBaseSystem& fbs);
 
 		/**
 		 * @brief Publishes the controller state
-		 * @param const ros::Time& Current time to be published the message
-		 * @param const dwl::WholeBodyState& Whole-body current state
-		 * @param const dwl::WholeBodyState& Whole-body desired state
-		 * @param const dwl::WholeBodyState& Whole-body error state
-		 * @param const Eigen::VectorXd& Feedforward command
-		 * @param const Eigen::VectorXd& Feedback command
-		 * @param const Eigen::VectorXd& Total command
+		 * @param[in] time Current time to be published the message
+		 * @param[in] current_state Whole-body current state
+		 * @param[in] desired_state Whole-body desired state
+		 * @param[in] error_state Whole-body error state
+		 * @param[in] feedforward_cmd Feedforward command
+		 * @param[in] feedback_cmd Feedback command
+		 * @param[in] cmd_eff Total command
 		 */
 		void publishControllerState(const ros::Time& time,
 									const dwl::WholeBodyState& current_state,
@@ -104,8 +104,8 @@ class ControllerCommons
 
 		/**
 		 * @brief Publishes the whole-body state
-		 * @param const ros::Time& Current time to be published the message
-		 * @param const dwl::WholeBodyState& Current whole-body state to be
+		 * @param[in] time Current time to be published the message
+		 * @param[in] state Current whole-body state to be
 		 * published the message
 		 */
 		void publishWholeBodyState(const ros::Time& time,
@@ -114,18 +114,18 @@ class ControllerCommons
 		/**
 		 * @brief Publishes the base state estimation messages which is
 		 * real-time friendly
-		 * @param const ros::Time& Current time to be published the message
-		 * @param const dwl::rbd::Vector6d& Current base position
-		 * @param const dwl::rbd::Vector6d& Current base velocity
+		 * @param[in] time Current time to be published the message
+		 * @param[in] base_pos Current base position
+		 * @param[in] base_vel Current base velocity
 		 */
 		void publishStateEstimation(const ros::Time& time,
-									const dwl::rbd::Vector6d& base_pos,
-									const dwl::rbd::Vector6d& base_vel);
+									const Eigen::Vector6d& base_pos,
+									const Eigen::Vector6d& base_vel);
 
 		/**
 		 * @brief Publishes the Imu state which is real-time friendly
-		 * @param const ros::Time& Current time to be published the message
-		 * @param const struct ImuData& Current Imu data
+		 * @param[in] time Current time to be published the message
+		 * @param[in] imu Current Imu data
 		 */
 		void publishImuState(const ros::Time& time,
 							 const struct ImuData& imu);
@@ -133,23 +133,23 @@ class ControllerCommons
 		/**
 		 * @brief Updates the base state estimation subscription status which
 		 * is real-time friendly. This provides us the current base states
-		 * @param dwl::rbd::Vector6d& Estimated base position
-		 * @param dwl::rbd::Vector6d& Estimated base velocity
+		 * @param[in] base_pos Estimated base position
+		 * @param[in] base_vel Estimated base velocity
 		 */
-		void updateStateEstimationSubscription(dwl::rbd::Vector6d& base_pos,
-											   dwl::rbd::Vector6d& base_vel);
+		void updateStateEstimationSubscription(Eigen::Vector6d& base_pos,
+											   Eigen::Vector6d& base_vel);
 
 		/**
 		 * @brief Updates the motion plan subscription status which is
 		 * real-time friendly. This provides us the desired robot states
-		 * @param dwl::WholeBodyState Whole-body desired state
+		 * @param[out] state Whole-body desired state
 		 */
 		void updateMotionPlanSubscription(dwl::WholeBodyState& state);
 
 		/**
 		 * @brief Sets required initial values for updating the plan once a
 		 * new motion plan is received
-		 * @param const dwl_msgs::WholeBodyTrajectory& Motion plan
+		 * @param[in] plan Motion plan
 		 */
 		void setPlan(const dwl_msgs::WholeBodyTrajectory& plan);
 
@@ -157,16 +157,7 @@ class ControllerCommons
 		 * @brief Updates the desired robot states give a motion plan.
 		 * A motion plan is described with a desired robot trajectory.
 		 * This motion plan is updated once the trajectory is finished.
-		 * @param dwl::WholeBodyState Whole-body desired state
-		 * @param Eigen::VectorXd& Updated joint position
-		 * @param dwl::rbd::Vector6d& Updated base velocity
-		 * @param Eigen::VectorXd& Updated joint velocity
-		 * @param dwl::rbd::Vector6d& Updated base acceleration
-		 * @param Eigen::VectorXd& Updated joint acceleration
-		 * @param Eigen::VectorXd& Updated joint effort
-		 * @param dwl::rbd::BodyVector& Updated end-effector position
-		 * @param dwl::rbd::BodyVector& Updated end-effector velocity
-		 * @param dwl::rbd::BodyVector& Updated end-effector acceleration
+		 * @param[ou] state Whole-body desired state
 		 */
 		void updatePlan(dwl::WholeBodyState& state);
 
@@ -188,7 +179,7 @@ class ControllerCommons
 		void setPlanCB(const dwl_msgs::WholeBodyTrajectoryConstPtr& msg);
 
 		/** @brief the floating-base system information */
-		dwl::model::FloatingBaseSystem system_;
+		std::shared_ptr<dwl::model::FloatingBaseSystem> fbs_;
 
 		/** @brief Controller state publisher */
 		boost::shared_ptr<realtime_tools::RealtimePublisher<dwl_msgs::WholeBodyController> > controller_state_pub_;
@@ -221,7 +212,7 @@ class ControllerCommons
 		bool init_base_state_;
 
 		/** @brief Base state position offset */
-		dwl::rbd::Vector6d base_state_offset_;
+		Eigen::Vector6d base_state_offset_;
 
 		/** @brief Motion plan */
 		dwl_msgs::WholeBodyTrajectory plan_;
